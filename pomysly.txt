@@ -1,0 +1,13 @@
+PD3 python pomysly:
+
+1) Mapa:
+	- skoro są to miasta, mamy dlugosc i szerokość geograficzną więc można:
+		* na przestrzeni lat zobaczyć jak przybywa/maleje liczba stacji (zaznaczyć stacje na mapie) - interaktywne
+		* utworzyć heatmape ruchu rowerowego - interaktywne
+		* prześledzić na mapie gdzie znajduje się rower (dla danego BikeId na danym przedziale czasu nanieść na mape pokonana droge), obliczyć liczbe kilometrów (na podstawie dlugości i szerokosci) - interaktywne
+
+2) Podstawowe statystyki:
+	- liczba uzytkownikow w latach (ze wzgledu na typ)
+	- średnia dlugosc jazdy (ze wzgledu na typ)
+	
+
