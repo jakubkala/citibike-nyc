@@ -2,55 +2,60 @@ import os
 import pandas as pd
 from tqdm import tqdm
 
-def load_data(path, files = None):
-    """
 
-    :param path: directory that contains data
-    :param files: names of files to be loaded; if None: all data from directory will be read
-    :return:
-    """
+class DataLoader():
+    def __init__(self, path, files=None):
+        """
 
-    dfs = []
-    if files is not None:
-        for filename in tqdm(files):
-            dfs.append(pd.read_csv(os.path.join(path, filename)))
-    else:
-        for filename in tqdm(os.listdir(path)):
-            if 'citibike-tripdata.csv' in filename:
-                dfs.append(pd.read_csv(os.path.join(path, filename)))
+        :param path: directory that contains data
+        :param files: names of files to be loaded; if None: all data from directory will be read
+        """
+        self.path = path
+        self.files = files
 
-    return pd.concat(dfs)
+        return
 
+    def load_data(self):
 
-def load_stations(df):
-    """
-    returns stations list
-    """
-    names = ['station id', 'station name', 'station latitude', 'station longitude']
+        dfs = []
+        if self.files is not None:
+            for filename in tqdm(self.files):
+                dfs.append(pd.read_csv(os.path.join(self.path, filename)))
+        else:
+            for filename in tqdm(os.listdir(self.path)):
+                if 'citibike-tripdata.csv' in filename:
+                    dfs.append(pd.read_csv(os.path.join(self.path, filename)))
 
-    # start stations
-    start = df[['start station id',
-                'start station name',
-                'start station latitude',
-                'start station longitude']]
-    start.columns = names
+        self.data = pd.concat(dfs)
 
-    # end stations
-    end = df[['end station id',
-              'end station name',
-              'end station latitude',
-              'end station longitude']]
-    end.columns = names
+        return
 
-    return pd.concat([start, end]).drop_duplicates().reset_index(drop=True)
+    def load_stations(self):
+        """
+        returns stations list
+        """
+        names = ['station id', 'station name', 'station latitude', 'station longitude']
 
+        # start stations
+        start = self.data[['start station id',
+                           'start station name',
+                           'start station latitude',
+                           'start station longitude']]
+
+        start.columns = names
+
+        # end stations
+        end = self.data[['end station id',
+                         'end station name',
+                         'end station latitude',
+                         'end station longitude']]
+
+        end.columns = names
+
+        return pd.concat([start, end]).drop_duplicates().reset_index(drop=True)
 
 def main():
-    #~/IAD/semestr-1/PADR/citibike-tripdata/data ??
-    #path = "../../../PADR/citibike-tripdata/data"
-    #path = "./data/"
-
-    #df = load_data(path, files=['201801-citibike-tripdata.csv', '201807-citibike-tripdata.csv'])
     pass
+
 if __name__ == "__main__":
     main()
