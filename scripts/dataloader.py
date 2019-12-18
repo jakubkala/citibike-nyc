@@ -54,6 +54,21 @@ class DataLoader():
 
         return pd.concat([start, end]).drop_duplicates().reset_index(drop=True)
 
+    def load_station_counts(self):
+        """
+        returns counts per station
+        """
+
+        df = self.data.copy()
+        df['day'] = [i[0:10] for i in df.starttime]
+        df['hour'] = [int(i[11:13]) for i in df.starttime]
+
+        res = df.loc[:, ['start station id', 'day','hour']].groupby(
+            ['start station id', 'day','hour']).size().reset_index().rename(
+            columns={0: 'count'})
+
+        return res
+
 def main():
     pass
 
