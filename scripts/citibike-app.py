@@ -1,0 +1,109 @@
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+import pandas as pd
+import numpy as np
+
+from dash.dependencies import Input, Output
+from plotly import graph_objs as go
+from plotly.graph_objs import *
+from datetime import datetime as dt
+
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
+app = dash.Dash(__name__)
+#server = app.server
+
+
+# #wrapper {
+#     width: 500px;
+#     border: 1px solid black;
+#     overflow: hidden; /* add this to contain floated children */
+# }
+# #first {
+#     width: 300px;
+#     float:left; /* add this */
+#     border: 1px solid red;
+# }
+# #second {
+#     border: 1px solid green;
+#     float: left; /* add this */
+# }
+
+app.layout = html.Div(
+    style={'border': '1px solid black'},
+    children=[
+        html.Div(
+            className="row",
+            style={'width': '30%', 'float':'left', 'height':'100vh','border': '1px solid black'},
+            children=[
+                html.Div(
+                    className='user-controls',
+                    children=[
+                        html.H2("CITIBIKE NYC"),
+                        html.P("Date Picker"),
+                        html.Div(
+                            className='date-dropdown-div',
+                            children=[
+                                dcc.DatePickerSingle(
+                                    id='date-picker',
+                                    min_date_allowed=dt(2018, 1, 1),
+                                    max_date_allowed=dt(2018, 12, 31),
+                                    initial_visible_month=dt(2018, 1, 1),
+                                    date=dt(2018, 1, 1),
+                                    display_format="MM-DD",
+                                    style={"border": "0px solid black"}
+                                )
+                            ]
+                        ),
+                        html.P("Certain hour picker"),
+                        html.Div(
+                            className="certain-hour-picker",
+                            children=[
+                                dcc.Dropdown(
+                                    id="hour-selector",
+                                    options=[
+                                        {
+                                            "label": str(n) + ":00",
+                                            "value": str(n),
+                                        }
+                                        for n in range(24)
+                                    ],
+                                    multi=False,
+                                    placeholder="Select certain hours",
+                                )
+                            ]
+                        ),
+                        html.P('Location Picker'),
+                        html.Div(
+                            className='location-picker',
+                            children=[
+                                dcc.Dropdown(
+                                    options=[
+                                        {'label': 'A', 'value': 'A'},
+                                        {'label': 'B', 'value': 'B'},
+                                        {'label': 'C', 'value': 'C'}
+                                    ],
+                                    value='A'
+                                )
+                            ]
+                        )
+                    ]
+                )
+            ]
+    ),
+        html.Div(
+            style={'width':'69%', 'float':'left','border': '1px solid black'},
+            className="2nd-div",
+            children=[dcc.Graph(id='map'),
+                      html.Div(
+                          className="text-padding",
+                          children=["Lorem Ipsumm"]
+                      ),
+                      dcc.Graph(id='plot')
+                ]
+        )]
+)
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
