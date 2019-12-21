@@ -16,6 +16,7 @@ app = dash.Dash(__name__)
 
 
 
+
 from dataloader import DataLoader
 
 ### Obróbka danych
@@ -67,13 +68,6 @@ fig.update_layout(
 )
 
 
-
-
-
-
-
-
-
 # #wrapper {
 #     width: 500px;
 #     border: 1px solid black;
@@ -90,7 +84,9 @@ fig.update_layout(
 # }
 
 app.layout = html.Div(
-    style={'border': '1px solid black','style':'dark'},
+
+    style={'border': '1px solid black'},
+
     children=[
         html.Div(
             className="row",
@@ -152,6 +148,7 @@ app.layout = html.Div(
             ]
     ),
         html.Div(
+
             style={'width':'69%','style':'dark','float':'left','height':'100vh','border': '1px solid black'},
             className="2nd-div",
             children=[html.Div(
@@ -160,6 +157,7 @@ app.layout = html.Div(
                       ),
                 dcc.Graph(id='map',figure = fig)
                 ,
+
                       html.Div(
                           className="text-padding",
                           children=["Lorem Ipsumm"]
