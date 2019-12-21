@@ -15,6 +15,59 @@ app = dash.Dash(__name__)
 #server = app.server
 
 
+
+
+from dataloader import DataLoader
+
+### Obróbka danych
+dataloader = DataLoader("../data/",["201901-citibike-tripdata.csv"])
+dataloader.load_data()
+station_counts = dataloader.load_station_counts()
+station = dataloader.load_stations()
+station = station_counts.merge(station,how = 'inner', right_on='station id', left_on = 'start station id')
+station_20190101_16 = station.loc[(station.hour == 16) & (station.day == '2019-01-01') & (station['count'] > 5),:]
+station_20190101_16['text'] = station_20190101_16['station name'] + " count: " + station_20190101_16['count'].astype('str')
+
+
+
+### Mapa
+import plotly.graph_objects as go
+
+spotify_green = '#1DB954'
+token = 'pk.eyJ1IjoiZGFuaWVscG9uaWtvd3NraSIsImEiOiJjazRjempwb3owZ2N3M2xtMHBtZjZ6dGZ6In0.r99JQYbCq6Kevwj6DsWtGg'
+
+fig = go.Figure(go.Scattermapbox(
+        lon = station_20190101_16['station longitude'],
+        lat = station_20190101_16['station latitude'],
+        text = station_20190101_16['text'],
+        mode='markers',
+        marker=go.scattermapbox.Marker(
+            size = 9,
+            color = spotify_green,
+            opacity = station_20190101_16['count']/station_20190101_16['count'].max()
+            # colorscale= 'brwnyl',
+            # showscale = True, # jak sie ustali skale to pokazuje skale z boku
+            # reversescale = True # odwraca skale kolorow
+        )
+    ))
+
+fig.update_layout(
+    autosize=True,
+    hovermode='closest',
+    mapbox=go.layout.Mapbox(
+        accesstoken= token,
+        bearing=0,
+        center=go.layout.mapbox.Center(
+            lat= station.loc[0,'station latitude'],
+            lon= station.loc[0,'station longitude']
+        ),
+        pitch=0,
+        zoom=11,
+        style="dark"
+    )
+)
+
+
 # #wrapper {
 #     width: 500px;
 #     border: 1px solid black;
@@ -31,7 +84,9 @@ app = dash.Dash(__name__)
 # }
 
 app.layout = html.Div(
+
     style={'border': '1px solid black'},
+
     children=[
         html.Div(
             className="row",
@@ -93,9 +148,16 @@ app.layout = html.Div(
             ]
     ),
         html.Div(
-            style={'width':'69%', 'float':'left','border': '1px solid black'},
+
+            style={'width':'69%','style':'dark','float':'left','height':'100vh','border': '1px solid black'},
             className="2nd-div",
-            children=[dcc.Graph(id='map'),
+            children=[html.Div(
+                          className="text-padding",
+                          children=["Map"]
+                      ),
+                dcc.Graph(id='map',figure = fig)
+                ,
+
                       html.Div(
                           className="text-padding",
                           children=["Lorem Ipsumm"]
