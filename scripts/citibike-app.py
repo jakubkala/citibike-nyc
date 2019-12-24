@@ -20,12 +20,12 @@ app = dash.Dash(__name__)
 from dataloader import DataLoader
 
 ### Obróbka danych
-dataloader = DataLoader("../data/",["201901-citibike-tripdata.csv"])
+dataloader = DataLoader("../../PADR/citibike-tripdata/data/",["201701-citibike-tripdata.csv"])
 dataloader.load_data()
-station_counts = dataloader.load_station_counts()
+#station_counts = dataloader.load_station_counts()
 station = dataloader.load_stations()
 station = station_counts.merge(station,how = 'inner', right_on='station id', left_on = 'start station id')
-station_20190101_16 = station.loc[(station.hour == 16) & (station.day == '2019-01-01') & (station['count'] > 5),:]
+#station_20190101_16 = station.loc[(station.hour == 16) & (station.day == '2017-01-01') & (station['count'] > 5),:]
 station_20190101_16['text'] = station_20190101_16['station name'] + " count: " + station_20190101_16['count'].astype('str')
 
 

@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from tqdm import tqdm
-
+import datetime as dt
 
 class DataLoader():
     def __init__(self, path, files=None):
@@ -20,11 +20,15 @@ class DataLoader():
         dfs = []
         if self.files is not None:
             for filename in tqdm(self.files):
-                dfs.append(pd.read_csv(os.path.join(self.path, filename)))
+                df = pd.read_csv(os.path.join(self.path, filename))
+                df.columns = [colname.lower() for colname in df.columns]
+                dfs.append(df)
         else:
             for filename in tqdm(os.listdir(self.path)):
                 if 'citibike-tripdata.csv' in filename:
-                    dfs.append(pd.read_csv(os.path.join(self.path, filename)))
+                    df = pd.read_csv(os.path.join(self.path, filename))
+                    df.columns = [colname.lower() for colname in df.columns]
+                    dfs.append(df)
 
         self.data = pd.concat(dfs)
 
@@ -56,16 +60,18 @@ class DataLoader():
 
     def load_station_counts(self):
         """
-        returns counts per station
+        returns counts of bike rentals per station
         """
 
         df = self.data.copy()
-        df['day'] = [i[0:10] for i in df.starttime]
-        df['hour'] = [int(i[11:13]) for i in df.starttime]
+        df['day'] = [i[0:10] for i in df['start time']]
+        df['hour'] = [int(i[11:13]) for i in df['start time']]
 
         res = df.loc[:, ['start station id', 'day','hour']].groupby(
             ['start station id', 'day','hour']).size().reset_index().rename(
             columns={0: 'count'})
+
+        res.columns = ['station id', 'date', 'hour', 'count']
 
         return res
 
