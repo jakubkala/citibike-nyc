@@ -1,0 +1,118 @@
+/*Citibike-NYC app - custom CSS */
+@import url('https://fonts.googleapis.com/css?family=Dosis&display=swap');
+@import url("https://fonts.googleapis.com/css?family=Lato:300");
+body {
+  /*display: flex;*/
+  background-color: #1E1E1E;
+  color: #d8d8d8;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3, h4, h5, p {
+  font-family: "Dosis";
+  font-weight: bold;
+  letter-spacing: 2.1px;
+  font-size: 21px;
+  padding-left: 12px;
+}
+.div-user-controls {
+  padding-left: 55px;
+  padding-top: 64px;
+}
+
+.div-for-dropdown {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.row{
+  width: 30%;
+  float: left;
+  height: 100vh;
+}
+.map-div{
+  width: 69%;
+  float: left;
+}
+
+.date-dropdown-div {
+  width: 200%;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.certain-hour-picker{
+  width: 50%;
+}
+
+.location-picker{
+  width: 50%;
+}
+
+#date {
+  background-color: #1e1e1e;
+  font-family: "Open Sans";
+  font-weight: 400;
+  color: #dbdbdb;
+  border: 0.5px solid #dbdbdb44;
+}
+
+.Select-control{
+  border: 0.5px solid #dbdbdb44;
+}
+
+.has-value.Select--single>.Select-control .Select-value .Select-value-label, .has-value.is-pseudo-focused.Select--single>.Select-control .Select-value .Select-value-label {
+  color: white;
+}
+._dash-app-content {
+  overflow-x: hidden;
+  overflow-y: hidden;
+  position: relative;
+}
+.has-value.Select--single>.Select-control .Select-value .Select-value-label, .has-value.is-pseudo-focused.Select--single>.Select-control .Select-value .Select-value-label{
+  color: #d8d8d8;
+  font-weight: 400;
+  font-size: 14px;
+}
+
+.Select-control, .Select-menu-outer, .Select-multi-value-wrapper, .select-up, .is-open .Select-control{
+  background-color: #1E1E1E;
+  color: white; 
+}
+
+.DateInput.DateInput_1{
+  width: 100%;
+}
+.SingleDatePickerInput__withBorder{
+  border:none;
+}
+
+.DateInput.DateInput_1 {
+  background-color: #1e1e1e;
+}
+
+.SingleDatePickerInput__withBorder {
+  border-radius: 3px;
+  color: #dbdbdb;
+  background: #1e1e1e;
+  background-color: #1e1e1e;
+}
+.SingleDatePickerInput.SingleDatePickerInput_1.SingleDatePickerInput__withBorder.SingleDatePickerInput__withBorder_2 {
+  border: 0.0px solid #dbdbdb;
+  display: block;
+}
+.SingleDatePicker_1 {
+  border: 0.0px solid #dbdbdb;
+  display: block;
+}
+
+.SingleDatePicker_picker, .SingleDatePicker_picker_1, .SingleDatePicker_picker__directionLeft,
+.SingleDatePicker_picker__directionLeft_2{
+  filter:invert(100%);
+}
+
+.SingleDatePicker-wrapper {
+  background: pink;
+}
