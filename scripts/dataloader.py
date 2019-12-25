@@ -30,7 +30,15 @@ class DataLoader():
                     df.columns = [colname.lower() for colname in df.columns]
                     dfs.append(df)
 
-        self.data = pd.concat(dfs)
+        res = pd.concat(dfs)
+
+        res.columns = ['trip duration', 'start time', 'stop time', 'start station id',
+       'start station name', 'start station latitude',
+       'start station longitude', 'end station id', 'end station name',
+       'end station latitude', 'end station longitude', 'bike id', 'user type',
+       'birth year', 'gender']
+
+        self.data = res
 
         return
 
@@ -64,6 +72,7 @@ class DataLoader():
         """
 
         df = self.data.copy()
+
         df['day'] = [i[0:10] for i in df['start time']]
         df['hour'] = [int(i[11:13]) for i in df['start time']]
 
