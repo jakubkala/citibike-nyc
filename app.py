@@ -14,7 +14,7 @@ from datetime import datetime as dt
 from scripts.dataloader import  DataLoader
 
 #change path
-dl = DataLoader("/home/jakubkala/IAD/semestr-1/PADR/citibike-tripdata/data",
+dl = DataLoader("data",
                 ["201701-citibike-tripdata.csv"])
 
 dl.load_data()
@@ -26,37 +26,6 @@ station_counts['label'] = station_counts['station name'] + " bikes rental count:
 
 spotify_green = '#1DB954'
 token = 'pk.eyJ1IjoiZGFuaWVscG9uaWtvd3NraSIsImEiOiJjazRjempwb3owZ2N3M2xtMHBtZjZ6dGZ6In0.r99JQYbCq6Kevwj6DsWtGg'
-
-fig = go.Figure(go.Scattermapbox(
-        lon = station_counts['station longitude'],
-        lat = station_counts['station latitude'],
-        text = station_counts['label'],
-        mode='markers',
-        marker=go.scattermapbox.Marker(
-            size = 9,
-            color = spotify_green,
-            opacity = station_counts['count']/station_counts['count'].max()
-            # colorscale= 'brwnyl',
-            # showscale = True, # jak sie ustali skale to pokazuje skale z boku
-            # reversescale = True # odwraca skale kolorow
-        )
-    ))
-
-fig.update_layout(
-    autosize=True,
-    hovermode='closest',
-    mapbox=go.layout.Mapbox(
-        accesstoken= token,
-        bearing=0,
-        center=go.layout.mapbox.Center(
-            lat= stations.loc[0,'station latitude'],
-            lon= stations.loc[0,'station longitude']
-        ),
-        pitch=0,
-        zoom=11,
-        style="dark"
-    )
-)
 
 app = dash.Dash(__name__)
 
@@ -77,11 +46,11 @@ app.layout = html.Div(
                             children=[
                                 dcc.DatePickerSingle(
                                     id='date-picker',
-                                    min_date_allowed=dt(2018, 1, 1),
-                                    max_date_allowed=dt(2018, 12, 31),
+                                    min_date_allowed=dt(2017, 1, 1),
+                                    max_date_allowed=dt(2019, 12, 31),
                                     initial_visible_month=dt(2018, 1, 1),
-                                    date=dt(2018, 1, 1),
-                                    display_format="MMMM, DD",
+                                    date=dt(2017, 1, 1),
+                                    display_format="MMMM D, YYYY",
                                     style={"border": "0px solid black"}
                                 )
                             ]
@@ -126,7 +95,7 @@ app.layout = html.Div(
         html.Div(
             #style={'width':'69%', 'float':'left','border': '1px solid black'},
             className="map-div",
-            children=[dcc.Graph(id='map', figure=fig),
+            children=[dcc.Graph(id='map'),
                       html.Div(
                           className="text-padding",
                           children=["Lorem Ipsumm"]
@@ -135,6 +104,68 @@ app.layout = html.Div(
                 ]
         )]
 )
+
+@app.callback(
+    Output("map", "figure"),
+    [
+        Input("date-picker", "date"),
+        Input("hour-selector","value"),
+    ],
+)
+def update_graph(datePicked,hourPicked):
+    # date_picked = dt.strptime(datePicked, "%Y-%m-%d")
+    zoom = 12.0
+    latInitial = 40.7272
+    lonInitial = -73.991251
+    bearing = 0
+
+    date_picked = datePicked[0:10]
+
+    if hourPicked is None:
+        hourPicked = [i for i in range(0,24)]
+    else:
+        hourPicked = [int(hourPicked)]
+
+    selectedhour = [i in hourPicked for i in station_counts.hour]
+
+    pickedData = station_counts.loc[(station_counts.date == date_picked) & (selectedhour)  ,:]
+
+
+    fig = go.Figure(go.Scattermapbox(
+        lon=pickedData['station longitude'],
+        lat=pickedData['station latitude'],
+        text=pickedData['label'],
+        # text = hourPicked,
+        mode='markers',
+        marker=go.scattermapbox.Marker(
+            size=9,
+            color=spotify_green,
+            opacity=pickedData['count'] / pickedData['count'].max()
+            # colorscale= 'brwnyl',
+            # showscale = True, # jak sie ustali skale to pokazuje skale z boku
+            # reversescale = True # odwraca skale kolorow
+        )
+    ))
+
+    fig.update_layout(
+        autosize=True,
+        hovermode='closest',
+        mapbox=go.layout.Mapbox(
+            accesstoken=token,
+            bearing=bearing,
+            center=go.layout.mapbox.Center(
+                lat=latInitial,
+                lon=lonInitial
+            ),
+            pitch=0,
+            zoom=zoom,
+            style="dark"
+        )
+    )
+
+    return fig
+
+
 
 if __name__ == '__main__':
     app.run_server(debug=False)
