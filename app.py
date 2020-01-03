@@ -24,6 +24,15 @@ station_counts = station_counts.merge(stations,how = 'inner', on='station id')
 station_counts['label'] = station_counts['station name'] + " bikes rental count: " + station_counts['count'].astype('str')
 
 
+
+locations = {'Brooklyn':{'lat':40.650002,'lon':-73.94997},
+            'Central Park':{'lat':40.785091,'lon':-73.968285},
+            'Lower Manhattan':{'lat': 40.723008, 'lon':-74.000633},
+            'Brooklyn Bridge': {'lat':40.706086, 'lon':-73.996864}}
+
+
+
+
 spotify_green = '#1DB954'
 token = 'pk.eyJ1IjoiZGFuaWVscG9uaWtvd3NraSIsImEiOiJjazRjempwb3owZ2N3M2xtMHBtZjZ6dGZ6In0.r99JQYbCq6Kevwj6DsWtGg'
 
@@ -78,10 +87,10 @@ app.layout = html.Div(
                             className='location-picker',
                             children=[
                                 dcc.Dropdown(
-                                    options=[
-                                        {'label': 'A', 'value': 'A'},
-                                        {'label': 'B', 'value': 'B'},
-                                        {'label': 'C', 'value': 'C'}
+                                    id = 'location-picker',
+                                    options = [
+                                        {'label':k,'value':k}
+                                        for k in locations
                                     ],
                                     value='A'
                                 )
@@ -110,17 +119,32 @@ app.layout = html.Div(
     [
         Input("date-picker", "date"),
         Input("hour-selector","value"),
+        Input("location-picker","value")
     ],
 )
-def update_graph(datePicked,hourPicked):
-    # date_picked = dt.strptime(datePicked, "%Y-%m-%d")
+def update_graph(datePicked,hourPicked,LocationPicked):
+
     zoom = 12.0
-    latInitial = 40.7272
-    lonInitial = -73.991251
+
+    ## Location
+    if LocationPicked == 'A':
+        latInitial = 40.7272
+        lonInitial = -73.991251
+    elif isinstance(LocationPicked,str):
+        latInitial = locations[LocationPicked]['lat']
+        lonInitial = locations[LocationPicked]['lon']
+    else:
+        latInitial = 40.7272
+        lonInitial = -73.991251
+
+
     bearing = 0
 
+    ## Date
     date_picked = datePicked[0:10]
 
+
+    ## Hour
     if hourPicked is None:
         hourPicked = [i for i in range(0,24)]
     else:
@@ -135,7 +159,6 @@ def update_graph(datePicked,hourPicked):
         lon=pickedData['station longitude'],
         lat=pickedData['station latitude'],
         text=pickedData['label'],
-        # text = hourPicked,
         mode='markers',
         marker=go.scattermapbox.Marker(
             size=9,
