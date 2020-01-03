@@ -13,6 +13,12 @@ from datetime import datetime as dt
 #### Map
 from scripts.dataloader import  DataLoader
 
+### Model
+from sklearn.externals import joblib
+
+model = joblib.load("scripts/rf.pkl")
+
+
 #change path
 dl = DataLoader("data",
                 ["201701-citibike-tripdata.csv"])
@@ -96,6 +102,51 @@ app.layout = html.Div(
                                 )
                             ]
                         ),
+                        html.P('Start Station Picker'),
+                        html.Div(
+                            className='start-station',
+                            children=[
+                                dcc.Dropdown(
+                                    id = 'start-station',
+                                    options = [
+                                        {'label':station, 'value':station}
+                                        for station in station_counts['station name'].drop_duplicates()
+                                    ]
+                                )
+                            ]
+                        ),
+                        html.P('End Station Picker'),
+                        html.Div(
+                            className='end-station',
+                            children=[
+                                dcc.Dropdown(
+                                    id='end-station',
+                                    options=[
+                                        {'label': station, 'value': station}
+                                        for station in station_counts['station name'].drop_duplicates()
+                                    ]
+                                )
+                            ]
+                        ),
+                        html.P("Select ride time"),
+                        html.Div(
+                            className="certain-hour-picker",
+                            children=[
+                                dcc.Dropdown(
+                                    id="ride-time",
+                                    options=[
+                                        {
+                                            "label": str(n) + ":00",
+                                            "value": str(n),
+                                        }
+                                        for n in range(24)
+                                    ],
+                                    multi=False,
+                                    placeholder="Select ride time",
+                                )
+                            ]
+                        ),
+                        html.P(id="predict-time"),
                         html.P("Daniel Ponikowski \n Jakub Kała \n 2019")
                     ]
                 )
@@ -114,6 +165,7 @@ app.layout = html.Div(
         )]
 )
 
+## Update map
 @app.callback(
     Output("map", "figure"),
     [
@@ -189,6 +241,25 @@ def update_graph(datePicked,hourPicked,LocationPicked):
     return fig
 
 
+## Predict time
+@app.callback(Output("predict-time","children"),
+              [
+                  Input("start-station","value"),
+                  Input("end-station","value"),
+                  Input("ride-time", "value")
+              ])
+def update_predict_time(start_station,end_station,hourPicked):
+    start_station_info = stations.loc[stations['station name'] == start_station, :]
+    end_station_info = stations.loc[stations['station name'] == end_station, :]
+    to_predict = pd.DataFrame({'start station latitude': start_station_info['station latitude'].values,
+                               'start station longitude': start_station_info['station longitude'].values,
+                               'end station latitude': end_station_info['station latitude'].values,
+                               'end station longitude': end_station_info['station longitude'].values,
+                               'hour': [hourPicked]})
+
+    y_pred = np.round(model.predict(to_predict)[0],2)
+
+    return "Przedwidywany czas jazdy: " + str(y_pred) + " minut."
 
 if __name__ == '__main__':
     app.run_server(debug=False)
