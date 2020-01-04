@@ -165,6 +165,7 @@ app.layout = html.Div(
             className="map-div",
             children=[dcc.Graph(id='map'),
                       html.Div(
+                          id = 'title-plot',
                           className="text-padding",
                           children=["Lorem Ipsumm"]
                       ),
@@ -220,8 +221,6 @@ def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station)
     colors = ["blue" if pickedData['station name'].values[i] == start_station else "red" if
     pickedData['station name'].values[i] == end_station else spotify_green for i in range(pickedData.shape[0])]
 
-    # colors[pickedData['station name'] == start_station ] = 'red'
-    # colors[pickedData['station name'] == start_station ] = 'blue'
 
     fig = go.Figure(go.Scattermapbox(
         lon=pickedData['station longitude'],
@@ -231,7 +230,9 @@ def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station)
         marker=go.scattermapbox.Marker(
             size=9,
             color=colors,
-            opacity=pickedData['count'] / pickedData['count'].max()
+            opacity=pickedData['count'] / pickedData['count'].max(),
+            # margin=go.layout.Margin(l=0, r=35, t=0, b=0),
+
             # colorscale= 'brwnyl',
             # showscale = True, # jak sie ustali skale to pokazuje skale z boku
             # reversescale = True # odwraca skale kolorow
@@ -241,6 +242,7 @@ def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station)
     fig.update_layout(
         autosize=True,
         hovermode='closest',
+        margin=dict(t=0, b=0, l=0, r=0),
         mapbox=go.layout.Mapbox(
             accesstoken=token,
             bearing=bearing,
@@ -287,8 +289,6 @@ def ClickData(datePicked,hoverData):
 
     date_picked = datePicked[0:10]
 
-
-
     start = ' "text": "'
     end = ' bikes'
     try:
@@ -320,10 +320,30 @@ def ClickData(datePicked,hoverData):
         marker_color = spotify_green)])
 
     fig.update_layout(
-        title_text = 'Count barplot for: ' + res + " station " + date_picked
+        # title_text = 'Count barplot for: ' + res + " station " + date_picked,
+        margin=dict(t=0, b=0, l=0, r=0)
     )
 
     return fig
+
+@app.callback(Output('title-plot','children'),
+              [
+                  Input("date-picker", "date"),
+                  Input('map','hoverData')
+              ])
+def title_plot_update(datePicked,hoverData):
+    start = ' "text": "'
+    end = ' bikes'
+    try:
+        x = json.dumps(hoverData, indent=2)
+        res = x.split(start)[1].split(end)[0]
+    except IndexError:
+        res = '1 Ave & E 16 St'
+
+    date_picked = datePicked[0:10]
+
+    return 'Count barplot for: ' + res + " station " + date_picked,
+
 
 
 if __name__ == '__main__':
