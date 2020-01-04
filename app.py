@@ -9,7 +9,6 @@ from plotly import graph_objs as go
 from plotly.graph_objs import *
 from datetime import datetime as dt
 
-
 #### Map
 from scripts.dataloader import  DataLoader
 
@@ -18,6 +17,11 @@ from sklearn.externals import joblib
 
 model = joblib.load("scripts/rf.pkl")
 
+
+
+### Hover Data
+import json
+import re
 
 #change path
 dl = DataLoader("data",
@@ -28,6 +32,9 @@ stations = dl.load_stations()
 station_counts = dl.load_station_counts()
 station_counts = station_counts.merge(stations,how = 'inner', on='station id')
 station_counts['label'] = station_counts['station name'] + " bikes rental count: " + station_counts['count'].astype('str')
+
+station_hour_count = station_counts['count'].groupby([station_counts['station name'],
+                              station_counts['hour'],station_counts['date']]).sum().reset_index()
 
 
 
@@ -147,6 +154,7 @@ app.layout = html.Div(
                             ]
                         ),
                         html.P(id="predict-time"),
+                        html.P(id="click-data"),
                         html.P("Daniel Ponikowski \n Jakub Kała \n 2019")
                     ]
                 )
@@ -246,7 +254,7 @@ def update_graph(datePicked,hourPicked,LocationPicked):
               [
                   Input("start-station","value"),
                   Input("end-station","value"),
-                  Input("ride-time", "value")
+                      Input("ride-time", "value")
               ])
 def update_predict_time(start_station,end_station,hourPicked):
     start_station_info = stations.loc[stations['station name'] == start_station, :]
@@ -260,6 +268,55 @@ def update_predict_time(start_station,end_station,hourPicked):
     y_pred = np.round(model.predict(to_predict)[0],2)
 
     return "Przedwidywany czas jazdy: " + str(y_pred) + " minut."
+
+
+@app.callback(Output('plot','figure'),
+              [
+                  Input("date-picker", "date"),
+                  Input('map','hoverData')
+              ])
+def ClickData(datePicked,hoverData):
+
+    date_picked = datePicked[0:10]
+
+
+
+    start = ' "text": "'
+    end = ' bikes'
+    try:
+        x = json.dumps(hoverData, indent=2)
+        res = x.split(start)[1].split(end)[0]
+    except IndexError:
+        res = '1 Ave & E 16 St'
+
+    to_plot = station_hour_count.loc[
+              (station_hour_count['station name'] == res) & (station_hour_count['date'] == date_picked) ,
+              :]
+
+    hour = [i for i in range(25)]
+
+    count = []
+
+    for i in hour:
+        if i in to_plot.hour.values:
+            count.append(to_plot.loc[to_plot.hour.values == i, 'count'].values[0])
+        else:
+            count.append(0)
+
+    df = pd.DataFrame({'hour': hour,
+                       'count': count})
+
+    fig = go.Figure(data = [go.Bar(
+        x=df['hour'],
+        y=df['count'],
+        marker_color = spotify_green)])
+
+    fig.update_layout(
+        title_text = 'Count barplot for: ' + res + " station " + date_picked
+    )
+
+    return fig
+
 
 if __name__ == '__main__':
     app.run_server(debug=False)
