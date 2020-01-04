@@ -179,10 +179,13 @@ app.layout = html.Div(
     [
         Input("date-picker", "date"),
         Input("hour-selector","value"),
-        Input("location-picker","value")
+        Input("location-picker","value"),
+        Input("start-station", "value"),
+        Input("end-station", "value"),
+
     ],
 )
-def update_graph(datePicked,hourPicked,LocationPicked):
+def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station):
 
     zoom = 12.0
 
@@ -214,6 +217,11 @@ def update_graph(datePicked,hourPicked,LocationPicked):
 
     pickedData = station_counts.loc[(station_counts.date == date_picked) & (selectedhour)  ,:]
 
+    colors = ["blue" if pickedData['station name'].values[i] == start_station else "red" if
+    pickedData['station name'].values[i] == end_station else spotify_green for i in range(pickedData.shape[0])]
+
+    # colors[pickedData['station name'] == start_station ] = 'red'
+    # colors[pickedData['station name'] == start_station ] = 'blue'
 
     fig = go.Figure(go.Scattermapbox(
         lon=pickedData['station longitude'],
@@ -222,7 +230,7 @@ def update_graph(datePicked,hourPicked,LocationPicked):
         mode='markers',
         marker=go.scattermapbox.Marker(
             size=9,
-            color=spotify_green,
+            color=colors,
             opacity=pickedData['count'] / pickedData['count'].max()
             # colorscale= 'brwnyl',
             # showscale = True, # jak sie ustali skale to pokazuje skale z boku
@@ -254,7 +262,7 @@ def update_graph(datePicked,hourPicked,LocationPicked):
               [
                   Input("start-station","value"),
                   Input("end-station","value"),
-                      Input("ride-time", "value")
+                  Input("ride-time", "value")
               ])
 def update_predict_time(start_station,end_station,hourPicked):
     start_station_info = stations.loc[stations['station name'] == start_station, :]
