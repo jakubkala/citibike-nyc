@@ -24,6 +24,7 @@ import json
 import re
 
 #change path
+#"~/IAD/semestr-1/PADR/citibike-tripdata/data"
 dl = DataLoader("data",
                 ["201701-citibike-tripdata.csv"])
 
@@ -51,117 +52,140 @@ token = 'pk.eyJ1IjoiZGFuaWVscG9uaWtvd3NraSIsImEiOiJjazRjempwb3owZ2N3M2xtMHBtZjZ6
 
 app = dash.Dash(__name__)
 
-app.layout = html.Div(
-    style={'border': '1px solid black'},
+# Date picker
+date_picker = html.Div(
+    className='date-dropdown-div',
+    children=[
+        dcc.DatePickerSingle(
+            id='date-picker',
+            min_date_allowed=dt(2017, 1, 1),
+            max_date_allowed=dt(2019, 12, 31),
+            initial_visible_month=dt(2018, 1, 1),
+            date=dt(2017, 1, 1),
+            display_format="MMMM D, YYYY",
+            style={"border": "0px solid black"}
+        )
+    ]
+)
+
+# Hour picker
+hour_picker = html.Div(
+    className="certain-hour-picker",
+    children=[
+        dcc.Dropdown(
+            id="hour-selector",
+            options=[
+                {
+                    "label": str(n) + ":00",
+                    "value": str(n),
+                }
+                for n in range(24)
+            ],
+            multi=False,
+            placeholder="Select certain hours",
+        )
+    ]
+)
+
+# Location Picker
+location_picker = html.Div(
+    className='location-picker',
+    children=[
+        dcc.Dropdown(
+            id = 'location-picker',
+            options = [
+                {'label':k,'value':k}
+                for k in locations],
+            value='A'
+        )
+    ]
+)
+
+# Start station picker
+start_station_picker = html.Div(
+    className='start-station',
+    children=[
+        dcc.Dropdown(
+            id = 'start-station',
+            options = [
+                {'label':station, 'value':station}
+                for station in station_counts['station name'].drop_duplicates()
+            ]
+        )
+    ]
+)
+# End station picker
+end_station_picker = html.Div(
+    className='end-station',
+    children=[
+        dcc.Dropdown(
+            id='end-station',
+            options=[
+                {'label': station, 'value': station}
+                for station in station_counts['station name'].drop_duplicates()
+            ]
+        )
+    ]
+)
+
+# Ride time
+ride_time = html.Div(
+    className="certain-hour-picker",
+    children=[
+        dcc.Dropdown(
+            id="ride-time",
+            options=[
+                {
+                    "label": str(n) + ":00",
+                    "value": str(n),
+                }
+                for n in range(24)
+            ],
+            multi=False,
+            placeholder="Select ride time",
+        )
+    ]
+)
+
+
+# Map tab
+map_div = html.Div(
     children=[
         html.Div(
             className="row",
-            #style={'width': '30%', 'float':'left', 'height':'100vh','border': '1px solid black'},
             children=[
+                # Left control panel
                 html.Div(
                     className='user-controls',
                     children=[
                         html.H2("citibike-nyc"),
+
                         html.P("Date Picker"),
-                        html.Div(
-                            className='date-dropdown-div',
-                            children=[
-                                dcc.DatePickerSingle(
-                                    id='date-picker',
-                                    min_date_allowed=dt(2017, 1, 1),
-                                    max_date_allowed=dt(2019, 12, 31),
-                                    initial_visible_month=dt(2018, 1, 1),
-                                    date=dt(2017, 1, 1),
-                                    display_format="MMMM D, YYYY",
-                                    style={"border": "0px solid black"}
-                                )
-                            ]
-                        ),
+                        date_picker,
+
                         html.P("Certain hour picker"),
-                        html.Div(
-                            className="certain-hour-picker",
-                            children=[
-                                dcc.Dropdown(
-                                    id="hour-selector",
-                                    options=[
-                                        {
-                                            "label": str(n) + ":00",
-                                            "value": str(n),
-                                        }
-                                        for n in range(24)
-                                    ],
-                                    multi=False,
-                                    placeholder="Select certain hours",
-                                )
-                            ]
-                        ),
+                        hour_picker,
+
                         html.P('Location Picker'),
-                        html.Div(
-                            className='location-picker',
-                            children=[
-                                dcc.Dropdown(
-                                    id = 'location-picker',
-                                    options = [
-                                        {'label':k,'value':k}
-                                        for k in locations
-                                    ],
-                                    value='A'
-                                )
-                            ]
-                        ),
+                        location_picker,
+
                         html.P('Start Station Picker'),
-                        html.Div(
-                            className='start-station',
-                            children=[
-                                dcc.Dropdown(
-                                    id = 'start-station',
-                                    options = [
-                                        {'label':station, 'value':station}
-                                        for station in station_counts['station name'].drop_duplicates()
-                                    ]
-                                )
-                            ]
-                        ),
+                        start_station_picker,
+
                         html.P('End Station Picker'),
-                        html.Div(
-                            className='end-station',
-                            children=[
-                                dcc.Dropdown(
-                                    id='end-station',
-                                    options=[
-                                        {'label': station, 'value': station}
-                                        for station in station_counts['station name'].drop_duplicates()
-                                    ]
-                                )
-                            ]
-                        ),
+                        end_station_picker,
+
                         html.P("Select ride time"),
-                        html.Div(
-                            className="certain-hour-picker",
-                            children=[
-                                dcc.Dropdown(
-                                    id="ride-time",
-                                    options=[
-                                        {
-                                            "label": str(n) + ":00",
-                                            "value": str(n),
-                                        }
-                                        for n in range(24)
-                                    ],
-                                    multi=False,
-                                    placeholder="Select ride time",
-                                )
-                            ]
-                        ),
+                        ride_time,
+
                         html.P(id="predict-time"),
                         html.P(id="click-data"),
                         html.P("Daniel Ponikowski \n Jakub Kała \n 2019")
                     ]
                 )
             ]
-    ),
+        ),
         html.Div(
-            #style={'width':'69%', 'float':'left','border': '1px solid black'},
             className="map-div",
             children=[dcc.Graph(id='map'),
                       html.Div(
@@ -170,9 +194,29 @@ app.layout = html.Div(
                           children=["Lorem Ipsumm"]
                       ),
                       dcc.Graph(id='plot')
-                ]
-        )]
+                      ]
+        )
+    ]
 )
+
+
+# Application layout
+app.layout = html.Div([
+    dcc.Tabs(
+        id='tabs',
+        children=[
+            dcc.Tab(label='Map', children=[
+                map_div
+            ]),
+            dcc.Tab(label='Insights', children=[
+                dcc.Graph()
+            ]),
+        ])
+])
+
+
+
+
 
 ## Update map
 @app.callback(
@@ -352,4 +396,4 @@ def title_plot_update(datePicked,hoverData):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)

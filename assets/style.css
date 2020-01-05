@@ -2,21 +2,18 @@
 @import url('https://fonts.googleapis.com/css?family=Dosis&display=swap');
 @import url("https://fonts.googleapis.com/css?family=Lato:300");
 body {
-  /*display: flex;*/
   background-color: #1E1E1E;
   color: #d8d8d8;
   justify-content: center;
   margin: 0;
   padding: 0;
-}
-
-h1, h2, h3, h4, h5, p {
   font-family: "Dosis";
   font-weight: bold;
   letter-spacing: 2.1px;
   font-size: 21px;
   padding-left: 12px;
 }
+
 .div-user-controls {
   padding-left: 55px;
   padding-top: 64px;
@@ -28,12 +25,12 @@ h1, h2, h3, h4, h5, p {
 }
 
 .row{
-  width: 30%;
+  width: 25%;
   float: left;
   height: 100vh;
 }
 .map-div{
-  width: 69%;
+  width: 75%;
   float: left;
 }
 
@@ -113,6 +110,27 @@ h1, h2, h3, h4, h5, p {
   filter:invert(100%);
 }
 
-.SingleDatePicker-wrapper {
-  background: pink;
+/* Tabs */
+.os-tab-parent {
+  width: auto;
+}
+
+.os-tab-container {
+  width: auto;
+  height: 40px !important;
+  display: inline-block;
+  margin-top: 5px;
+}
+
+.tab--selected{
+  background-color: #1e1e1e !important;
+  border-color: #1DB954 !important;
+  color: #1DB954!important;
+  font-size: 110%;
+}
+
+.tab{
+  background-color: #1e1e1e !important;
+  border-color: #1DB954 !important;
+  color: #1DB954!important;
 }
