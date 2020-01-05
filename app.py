@@ -311,16 +311,23 @@ def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station)
                   Input("ride-time", "value")
               ])
 def update_predict_time(start_station,end_station,hourPicked):
-    start_station_info = stations.loc[stations['station name'] == start_station, :]
-    end_station_info = stations.loc[stations['station name'] == end_station, :]
-    to_predict = pd.DataFrame({'start station latitude': start_station_info['station latitude'].values,
+
+    if isinstance(start_station,str) and isinstance(end_station,str) and isinstance(hourPicked,str):
+        start_station_info = stations.loc[stations['station name'] == start_station, :]
+        end_station_info = stations.loc[stations['station name'] == end_station, :]
+        to_predict = pd.DataFrame({'start station latitude': start_station_info['station latitude'].values,
                                'start station longitude': start_station_info['station longitude'].values,
                                'end station latitude': end_station_info['station latitude'].values,
                                'end station longitude': end_station_info['station longitude'].values,
-                               'hour': [hourPicked]})
+                               'hour': [int(hourPicked)]})
 
-    y_pred = np.round(model.predict(to_predict)[0],2)
+        y_pred = np.round(model.predict(to_predict)[0],2)
+    else:
+        y_pred = 0
 
+    if end_station == start_station:
+        y_pred = 0
+        
     return "Przedwidywany czas jazdy: " + str(y_pred) + " minut."
 
 
