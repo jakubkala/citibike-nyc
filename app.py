@@ -321,8 +321,13 @@ def ClickData(datePicked,hoverData):
 
     fig.update_layout(
         # title_text = 'Count barplot for: ' + res + " station " + date_picked,
-        margin=dict(t=0, b=0, l=0, r=0)
+        margin=dict(t=0, b=2, l=2, r=0),
+        xaxis=dict(showgrid=False, zeroline=False,color = spotify_green,title_text = "Hour"),
+        yaxis=dict(showgrid=False, zeroline=False,color = spotify_green,title_text = "Count")
     )
+
+    fig.layout.plot_bgcolor = '#1E1E1E'
+    fig.layout.paper_bgcolor = '#1E1E1E'
 
     return fig
 
