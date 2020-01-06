@@ -16,30 +16,43 @@ class DataLoader():
         return
 
     def load_data(self):
-
+        month_count = {}
+        number_of_bike = {}
         dfs = []
-        if self.files is not None:
-            for filename in tqdm(self.files):
-                df = pd.read_csv(os.path.join(self.path, filename))
-                df.columns = [colname.lower() for colname in df.columns]
-                dfs.append(df)
-        else:
-            for filename in tqdm(os.listdir(self.path)):
-                if 'citibike-tripdata.csv' in filename:
-                    df = pd.read_csv(os.path.join(self.path, filename))
-                    df.columns = [colname.lower() for colname in df.columns]
-                    dfs.append(df)
 
-        res = pd.concat(dfs)
-
-        res.columns = ['trip duration', 'start time', 'stop time', 'start station id',
+        columnnames = ['trip duration', 'start time', 'stop time', 'start station id',
        'start station name', 'start station latitude',
        'start station longitude', 'end station id', 'end station name',
        'end station latitude', 'end station longitude', 'bike id', 'user type',
        'birth year', 'gender']
 
-        self.data = res
+        if self.files is not None:
+            for filename in tqdm(self.files):
+                df = pd.read_csv(os.path.join(self.path, filename))
+                df.columns = [colname.lower() for colname in df.columns]
+                df.columns = columnnames
+                dfs.append(df)
+                month_count[filename[0:6]] = df.shape[0]
+                number_of_bike[filename[0:6]] = df['bike id'].drop_duplicates().shape[0]
 
+        else:
+            for filename in tqdm(os.listdir(self.path)):
+                if 'citibike-tripdata.csv' in filename:
+                    df = pd.read_csv(os.path.join(self.path, filename))
+                    df.columns = [colname.lower() for colname in df.columns]
+                    df.columns = columnnames
+                    dfs.append(df)
+                    month_count[filename[0:6]] = df.shape[0]
+                    number_of_bike[filename[0:6]] = df['bike id'].drop_duplicates().shape[0]
+
+        res = pd.concat(dfs).reset_index(drop = True)
+
+
+
+        self.data = res
+        self.month_count = month_count
+        self.number_of_bike = number_of_bike
+        
         return
 
     def load_stations(self):
@@ -72,9 +85,12 @@ class DataLoader():
         """
 
         df = self.data.copy()
+        df2 = self.data.copy()
 
-        df['day'] = [i[0:10] for i in df['start time']]
-        df['hour'] = [int(i[11:13]) for i in df['start time']]
+        df2['start time'] = pd.to_datetime(df2['start time'])
+
+        df['hour'] = df2['start time'].dt.hour
+        df['day'] = df2['start time'].dt.date.astype('str')
 
         res = df.loc[:, ['start station id', 'day','hour']].groupby(
             ['start station id', 'day','hour']).size().reset_index().rename(
