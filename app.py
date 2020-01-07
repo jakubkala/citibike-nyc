@@ -34,9 +34,16 @@ station_counts = dl.load_station_counts()
 station_counts = station_counts.merge(stations,how = 'inner', on='station id')
 station_counts['label'] = station_counts['station name'] + " bikes rental count: " + station_counts['count'].astype('str')
 
+
+
 station_hour_count = station_counts['count'].groupby([station_counts['station name'],
                               station_counts['hour'],station_counts['date']]).sum().reset_index()
 
+# end_station_hour_count
+end_station_counts = dl.load_end_station_counts()
+end_station_counts = end_station_counts.merge(stations,how = 'inner', on='station id')
+end_station_hour_count = end_station_counts['count'].groupby([end_station_counts['station name'],
+                              end_station_counts['hour'],end_station_counts['date']]).sum().reset_index()
 
 
 locations = {'Brooklyn':{'lat':40.650002,'lon':-73.94997},
@@ -365,12 +372,33 @@ def ClickData(datePicked,hoverData):
     df = pd.DataFrame({'hour': hour,
                        'count': count})
 
-    fig = go.Figure(data = [go.Bar(
-        x=df['hour'],
-        y=df['count'],
-        marker_color = spotify_green)])
+
+    to_plot2 = end_station_hour_count.loc[
+              (end_station_hour_count['station name'] == res) & (end_station_hour_count['date'] == date_picked) ,
+              :]
+
+    hour = [i for i in range(25)]
+
+    count2 = []
+
+    for i in hour:
+        if i in to_plot2.hour.values:
+            count2.append(-to_plot2.loc[to_plot2.hour.values == i, 'count'].values[0])
+        else:
+            count2.append(0)
+
+    df2 = pd.DataFrame({'hour': hour,
+                       'count': count2})
+
+
+
+    fig = go.Figure(data = [
+        go.Bar(name = 'wypozyczenia', x=df['hour'], y=df['count'],marker_color = spotify_green),
+        go.Bar(name = 'zwroty', x=df2['hour'], y=df2['count'], marker_color='red')]
+    )
 
     fig.update_layout(
+        barmode = 'group',
         # title_text = 'Count barplot for: ' + res + " station " + date_picked,
         margin=dict(t=0, b=2, l=2, r=0),
         xaxis=dict(showgrid=False, zeroline=False,color = spotify_green,title_text = "Hour"),

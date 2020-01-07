@@ -100,6 +100,30 @@ class DataLoader():
 
         return res
 
+    def load_end_station_counts(self):
+        """
+        returns counts of bike rentals per station
+        """
+
+        df = self.data.copy()
+        df2 = self.data.copy()
+
+        df2['stop time'] = pd.to_datetime(df2['stop time'])
+
+        df['hour'] = df2['stop time'].dt.hour
+        df['day'] = df2['stop time'].dt.date.astype('str')
+
+        res = df.loc[:, ['end station id', 'day','hour']].groupby(
+            ['end station id', 'day','hour']).size().reset_index().rename(
+            columns={0: 'count'})
+
+        res.columns = ['station id', 'date', 'hour', 'count']
+
+        return res
+
+
+
+
 def main():
     pass
 
