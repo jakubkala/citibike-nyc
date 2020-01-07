@@ -15,9 +15,10 @@ from scripts.dataloader import  DataLoader
 ### Model
 from sklearn.externals import joblib
 
+from tqdm import tqdm
+
+
 model = joblib.load("scripts/rf.pkl")
-
-
 
 ### Hover Data
 import json
@@ -25,26 +26,43 @@ import re
 
 #change path
 #"~/IAD/semestr-1/PADR/citibike-tripdata/data"
-dl = DataLoader("data",
-                ["201701-citibike-tripdata.csv"])
+# dl = DataLoader("data",
+#                 ["201701-citibike-tripdata.csv"])
+#
+# dl.load_data()
+# stations = dl.load_stations()
+# station_counts = dl.load_station_counts()
+# station_counts = station_counts.merge(stations,how = 'inner', on='station id')
+# station_counts['label'] = station_counts['station name'] + " bikes rental count: " + station_counts['count'].astype('str')
+#
+#
+#
+# station_hour_count = station_counts['count'].groupby([station_counts['station name'],
+#                               station_counts['hour'],station_counts['date']]).sum().reset_index()
+#
+# # end_station_hour_count
+# end_station_counts = dl.load_end_station_counts()
+# end_station_counts = end_station_counts.merge(stations,how = 'inner', on='station id')
+# end_station_hour_count = end_station_counts['count'].groupby([end_station_counts['station name'],
+#                               end_station_counts['hour'],end_station_counts['date']]).sum().reset_index()
 
-dl.load_data()
-stations = dl.load_stations()
-station_counts = dl.load_station_counts()
-station_counts = station_counts.merge(stations,how = 'inner', on='station id')
-station_counts['label'] = station_counts['station name'] + " bikes rental count: " + station_counts['count'].astype('str')
+
+stations = {}
+station_counts = {}
+station_hour_count = {}
+end_station_hour_count = {}
 
 
-
-station_hour_count = station_counts['count'].groupby([station_counts['station name'],
-                              station_counts['hour'],station_counts['date']]).sum().reset_index()
-
-# end_station_hour_count
-end_station_counts = dl.load_end_station_counts()
-end_station_counts = end_station_counts.merge(stations,how = 'inner', on='station id')
-end_station_hour_count = end_station_counts['count'].groupby([end_station_counts['station name'],
-                              end_station_counts['hour'],end_station_counts['date']]).sum().reset_index()
-
+for year in range(2017,2019):
+    for i in tqdm(range(1,13)):
+        if i < 10:
+            file = str(year) + "0" + str(i)
+        else:
+            file = str(year) + str(i)
+        stations[file] = pd.read_csv("data/to_app/stations" + file + ".csv")
+        station_counts[file] = pd.read_csv("data/to_app/station_counts" + file + ".csv")
+        station_hour_count[file] = pd.read_csv("data/to_app/station_hour_count" + file + ".csv")
+        end_station_hour_count[file] = pd.read_csv("data/to_app/station_hour_count" + file + ".csv")
 
 locations = {'Brooklyn':{'lat':40.650002,'lon':-73.94997},
             'Central Park':{'lat':40.785091,'lon':-73.968285},
@@ -68,7 +86,7 @@ date_picker = html.Div(
             min_date_allowed=dt(2017, 1, 1),
             max_date_allowed=dt(2019, 12, 31),
             initial_visible_month=dt(2018, 1, 1),
-            date=dt(2017, 1, 1),
+            date=dt(2018, 1, 1),
             display_format="MMMM D, YYYY",
             style={"border": "0px solid black"}
         )
@@ -116,7 +134,7 @@ start_station_picker = html.Div(
             id = 'start-station',
             options = [
                 {'label':station, 'value':station}
-                for station in station_counts['station name'].drop_duplicates()
+                for station in station_counts["201801"]['station name'].drop_duplicates()
             ]
         )
     ]
@@ -129,7 +147,7 @@ end_station_picker = html.Div(
             id='end-station',
             options=[
                 {'label': station, 'value': station}
-                for station in station_counts['station name'].drop_duplicates()
+                for station in station_counts["201801"]['station name'].drop_duplicates()
             ]
         )
     ]
@@ -258,6 +276,7 @@ def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station)
     ## Date
     date_picked = datePicked[0:10]
 
+    station_counts_loc = station_counts[str(date_picked[0:4]) + str(date_picked[5:7])]
 
     ## Hour
     if hourPicked is None:
@@ -265,9 +284,9 @@ def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station)
     else:
         hourPicked = [int(hourPicked)]
 
-    selectedhour = [i in hourPicked for i in station_counts.hour]
+    selectedhour = [i in hourPicked for i in station_counts_loc.hour]
 
-    pickedData = station_counts.loc[(station_counts.date == date_picked) & (selectedhour)  ,:]
+    pickedData = station_counts_loc.loc[(station_counts_loc.date == date_picked) & (selectedhour)  ,:]
 
     colors = ["blue" if pickedData['station name'].values[i] == start_station else "red" if
     pickedData['station name'].values[i] == end_station else spotify_green for i in range(pickedData.shape[0])]
@@ -319,9 +338,10 @@ def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station)
               ])
 def update_predict_time(start_station,end_station,hourPicked):
 
+    stations_loc = stations['201801']
     if isinstance(start_station,str) and isinstance(end_station,str) and isinstance(hourPicked,str):
-        start_station_info = stations.loc[stations['station name'] == start_station, :]
-        end_station_info = stations.loc[stations['station name'] == end_station, :]
+        start_station_info = stations_loc.loc[stations_loc['station name'] == start_station, :]
+        end_station_info = stations_loc.loc[stations_loc['station name'] == end_station, :]
         to_predict = pd.DataFrame({'start station latitude': start_station_info['station latitude'].values,
                                'start station longitude': start_station_info['station longitude'].values,
                                'end station latitude': end_station_info['station latitude'].values,
@@ -355,8 +375,12 @@ def ClickData(datePicked,hoverData):
     except IndexError:
         res = '1 Ave & E 16 St'
 
-    to_plot = station_hour_count.loc[
-              (station_hour_count['station name'] == res) & (station_hour_count['date'] == date_picked) ,
+    station_hour_count_local = station_hour_count[str(date_picked[0:4]) + str(date_picked[5:7])]
+
+    end_station_hour_count_local = end_station_hour_count[str(date_picked[0:4]) + str(date_picked[5:7])]
+
+    to_plot = station_hour_count_local.loc[
+              (station_hour_count_local['station name'] == res) & (station_hour_count_local['date'] == date_picked) ,
               :]
 
     hour = [i for i in range(25)]
@@ -373,8 +397,8 @@ def ClickData(datePicked,hoverData):
                        'count': count})
 
 
-    to_plot2 = end_station_hour_count.loc[
-              (end_station_hour_count['station name'] == res) & (end_station_hour_count['date'] == date_picked) ,
+    to_plot2 = end_station_hour_count_local.loc[
+              (end_station_hour_count_local['station name'] == res) & (end_station_hour_count_local['date'] == date_picked) ,
               :]
 
     hour = [i for i in range(25)]
