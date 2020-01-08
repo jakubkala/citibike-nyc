@@ -62,7 +62,7 @@ for year in range(2017,2019):
         stations[file] = pd.read_csv("data/to_app/stations" + file + ".csv")
         station_counts[file] = pd.read_csv("data/to_app/station_counts" + file + ".csv")
         station_hour_count[file] = pd.read_csv("data/to_app/station_hour_count" + file + ".csv")
-        end_station_hour_count[file] = pd.read_csv("data/to_app/station_hour_count" + file + ".csv")
+        end_station_hour_count[file] = pd.read_csv("data/to_app/end_station_hour_count" + file + ".csv")
 
 locations = {'Brooklyn':{'lat':40.650002,'lon':-73.94997},
             'Central Park':{'lat':40.785091,'lon':-73.968285},
@@ -188,7 +188,7 @@ map_div = html.Div(
                         html.P("Date Picker"),
                         date_picker,
 
-                        html.P("Certain hour picker"),
+                        html.P("Certain hour Picker"),
                         hour_picker,
 
                         html.P('Location Picker'),
@@ -200,7 +200,7 @@ map_div = html.Div(
                         html.P('End Station Picker'),
                         end_station_picker,
 
-                        html.P("Select ride time"),
+                        html.P("Ride time Picker"),
                         ride_time,
 
                         html.P(id="predict-time"),
@@ -224,6 +224,74 @@ map_div = html.Div(
     ]
 )
 
+## Insight tab
+from plotly.subplots import make_subplots
+
+weather = pd.read_csv("data/to_app/weather_data_1617.csv")
+count_by_day2017 = pd.read_csv("data/to_app/count_by_day2017.csv")
+count_by_day2016 = pd.read_csv("data/to_app/count_by_day2016.csv")
+count_by_day = pd.concat([count_by_day2016,count_by_day2017]).sort_values(['day']).reset_index(drop = True)
+
+
+
+fig = make_subplots(
+    rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.02,
+    print_grid=False,specs=[[{"secondary_y": False}],[{"secondary_y": True}]]
+)
+
+fig.add_trace(
+    go.Scatter(x=weather.loc[:,'date'],
+               y=weather.loc[:,'average temperature'].values,
+               name = "temperature", marker = dict(color = spotify_green)
+    ),
+    row=2, col=1,secondary_y=False
+)
+
+fig.add_trace(
+    go.Bar(
+        x=weather.loc[:,'date'],
+        y=weather.loc[:,'snow depth'].values,
+        name = 'snow',marker = dict(color = "white")
+    ),
+    row = 2, col = 1,secondary_y=True
+)
+
+fig.add_trace(
+    go.Bar(
+        x=weather.loc[:,'date'],
+        y=weather.loc[:,'precipitation'].values,
+        name = 'rain',marker = dict(color = "blue")
+    ),
+    row = 2, col = 1,secondary_y=True
+)
+
+
+
+fig.add_trace(go.Scatter(x=count_by_day.loc[:,'day'].values,
+                         y=count_by_day.loc[:,'count'].values,
+                         name = "rides count",
+                         marker = dict(color = 'red'))
+              ,row=1, col=1)
+
+
+fig.update_layout(height=600, width=800,
+                  title_text="weather vs bike rides"
+)
+
+
+fig['layout']['yaxis2'].update(showgrid=False,zeroline=False)
+fig['layout']['yaxis1'].update(showgrid=False,zeroline=False)
+fig['layout']['xaxis2'].update(showgrid=False,zeroline=False)
+fig['layout']['xaxis1'].update(showgrid=False,zeroline=False)
+fig['layout']['yaxis3'].update(showgrid=False,zeroline=False)
+fig.layout.plot_bgcolor = '#1E1E1E'
+fig.layout.paper_bgcolor = '#1E1E1E'
+
+
+
+
+
+
 
 # Application layout
 app.layout = html.Div([
@@ -234,7 +302,7 @@ app.layout = html.Div([
                 map_div
             ]),
             dcc.Tab(label='Insights', children=[
-                dcc.Graph()
+                dcc.Graph(figure = fig, id = 'weather')
             ]),
         ])
 ])
