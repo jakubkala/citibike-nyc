@@ -53,7 +53,7 @@ station_hour_count = {}
 end_station_hour_count = {}
 
 
-for year in range(2017,2019):
+for year in range(2016,2019):
     for i in tqdm(range(1,13)):
         if i < 10:
             file = str(year) + "0" + str(i)
@@ -83,7 +83,7 @@ date_picker = html.Div(
     children=[
         dcc.DatePickerSingle(
             id='date-picker',
-            min_date_allowed=dt(2017, 1, 1),
+            min_date_allowed=dt(2016, 1, 1),
             max_date_allowed=dt(2019, 12, 31),
             initial_visible_month=dt(2018, 1, 1),
             date=dt(2018, 1, 1),
