@@ -106,7 +106,7 @@ hour_picker = html.Div(
                 }
                 for n in range(24)
             ],
-            multi=False,
+            multi=True,
             placeholder="Select certain hours",
         )
     ]
@@ -205,7 +205,8 @@ map_div = html.Div(
 
                         html.P(id="predict-time"),
                         html.P(id="click-data"),
-                        html.P("Daniel Ponikowski \n Jakub Kała \n 2019")
+                        html.P("Daniel Ponikowski \n Jakub Kała \n 2019"),
+                        html.P(id = 'hour-test')
                     ]
                 )
             ]
@@ -349,8 +350,12 @@ def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station)
     ## Hour
     if hourPicked is None:
         hourPicked = [i for i in range(0,24)]
+    # elif isinstance(hourPicked,str):
+    #     hourPicked = [int(i) for i in hourPicked]
+    elif len(hourPicked) > 0:
+        hourPicked = [int(i) for i in hourPicked]
     else:
-        hourPicked = [int(hourPicked)]
+        hourPicked = [i for i in range(24)]
 
     selectedhour = [i in hourPicked for i in station_counts_loc.hour]
 
@@ -521,6 +526,10 @@ def title_plot_update(datePicked,hoverData):
     return 'Count barplot for: ' + res + " station " + date_picked,
 
 
+# @app.callback(Output("hour-test","children"),
+#               [Input("hour-selector","value")])
+# def hourtest(hour):
+#     return hour
 
 if __name__ == '__main__':
     app.run_server(debug=True)
