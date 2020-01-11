@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -46,6 +47,46 @@ import re
 # end_station_hour_count = end_station_counts['count'].groupby([end_station_counts['station name'],
 #                               end_station_counts['hour'],end_station_counts['date']]).sum().reset_index()
 
+
+################################################
+################ dist_plot
+import plotly.express as px
+spotify_green = '#1DB954'
+dl = DataLoader("data",
+                ["201701-citibike-tripdata.csv"])
+dl.load_data()
+X = dl.data.loc[(dl.data['trip duration'] > 120) &(dl.data['trip duration'] < 7200) &(1 - pd.isnull(dl.data['birth year'])) & (dl.data['birth year'] > 1880),:]
+X['start time'] = pd.to_datetime(X['start time'])
+X['age'] = 2017 - X['birth year']
+X['hour'] = X['start time'].dt.hour
+
+X = X.loc[:,['trip duration','age','hour']]
+
+
+slider_min  = html.Div([
+    dcc.Slider(
+        id='slider-min',
+        min=0,
+        max=100,
+        step=1,
+        value=10,
+        marks = {i:str(i) for i in range(0,100,5)}
+    )])
+
+
+slider_max  = html.Div([
+    dcc.Slider(
+        id='slider-max',
+        min=0,
+        max=100,
+        step=1,
+        value=25,
+        marks = {i:str(i) for i in range(0,100,5)},
+        vertical = False
+    )])
+
+
+################################################
 
 stations = {}
 station_counts = {}
@@ -205,7 +246,7 @@ map_div = html.Div(
 
                         html.P(id="predict-time"),
                         html.P(id="click-data"),
-                        html.P("Daniel Ponikowski \n Jakub Kała \n 2019"),
+                        html.P("Daniel Ponikowski  Jakub Kała 2019"),
                         html.P(id = 'hour-test')
                     ]
                 )
@@ -303,7 +344,18 @@ app.layout = html.Div([
                 map_div
             ]),
             dcc.Tab(label='Insights', children=[
-                dcc.Graph(figure = fig, id = 'weather')
+                dcc.Graph(figure = fig, id = 'weather'),
+                dcc.Graph(id = 'distplot'),
+                html.P("Min Age:"),
+                slider_min,
+                html.P("Max Age:"),
+                slider_max
+
+
+
+
+
+
             ]),
         ])
 ])
@@ -526,10 +578,79 @@ def title_plot_update(datePicked,hoverData):
     return 'Count barplot for: ' + res + " station " + date_picked,
 
 
-# @app.callback(Output("hour-test","children"),
-#               [Input("hour-selector","value")])
-# def hourtest(hour):
-#     return hour
+@app.callback(Output('distplot','figure'),
+              [
+                  Input('slider-min','value'),
+                  Input('slider-max','value')
+              ])
+def updateDistPlot(min_age,max_age):
+    scale = ['#1E1E1E'] + px.colors.sequential.Viridis
+    Y = X.loc[(X.age > min_age) & (X.age <= max_age), :]
+    if Y.shape[0] > 5000:
+        Y = Y.sample(5000)
+    else:
+        Y = Y
+    x = Y.loc[:, 'age']
+    y = Y.loc[:, 'hour']
+
+    trace1 = go.Scatter(
+        x=x, y=y, mode='markers', name='points',
+        marker=dict(color=scale[0], size=1, opacity=0.4)
+    )
+    trace2 = go.Histogram2dcontour(
+        x=x, y=y, name='density', ncontours=25,
+        colorscale=scale, reversescale=False, showscale=False
+    )
+    trace3 = go.Histogram(
+        x=x, name='x density',
+        marker=dict(color=spotify_green),
+        yaxis='y2'
+    )
+    trace4 = go.Histogram(
+        y=y, name='y density', marker=dict(color=spotify_green),
+        xaxis='x2'
+    )
+    data = [trace1, trace2, trace3, trace4]
+
+    layout = go.Layout(
+        showlegend=False,
+        autosize=False,
+        width=600,
+        height=550,
+        xaxis=dict(
+            domain=[0, 0.85],
+            showgrid=False,
+            zeroline=False
+        ),
+        yaxis=dict(
+            domain=[0, 0.85],
+            showgrid=False,
+            zeroline=False
+        ),
+        margin=dict(
+            t=50
+        ),
+        hovermode='closest',
+        bargap=0,
+        xaxis2=dict(
+            domain=[0.85, 1],
+            showgrid=False,
+            zeroline=False
+        ),
+        yaxis2=dict(
+            domain=[0.85, 1],
+            showgrid=False,
+            zeroline=False
+        )
+    )
+
+    fig = go.Figure(data=data, layout=layout)
+    fig.update_xaxes(title_text='Age', color=spotify_green)
+    fig.update_yaxes(title_text='Hour', color=spotify_green)
+    fig.layout.plot_bgcolor = '#1E1E1E'
+    fig.layout.paper_bgcolor = '#1E1E1E'
+    return fig
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
