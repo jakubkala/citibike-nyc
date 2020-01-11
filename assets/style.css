@@ -79,34 +79,33 @@ body {
   color: white; 
 }
 
-.DateInput.DateInput_1{
-  width: 100%;
-}
-.SingleDatePickerInput__withBorder{
-  border:none;
+.DateInput_input {
+    box-sizing: border-box;
+    background-color: #1E1E1E;
+    color: white;
+    font: inherit
 }
 
-.DateInput.DateInput_1 {
+.DateRangePickerInput.DateInput_1 {
   background-color: #1e1e1e;
 }
 
-.SingleDatePickerInput__withBorder {
+.DateRangePickerInput__withBorder {
   border-radius: 3px;
   color: #dbdbdb;
   background: #1e1e1e;
-  background-color: #1e1e1e;
 }
-.SingleDatePickerInput.SingleDatePickerInput_1.SingleDatePickerInput__withBorder.SingleDatePickerInput__withBorder_2 {
+.DateRangePickerInput.DateRangePickerInput_1.DateRangePickerInput__withBorder.DateRangePickerInput__withBorder_2 {
   border: 0.0px solid #dbdbdb;
   display: block;
 }
-.SingleDatePicker_1 {
+.DateRangePicker_1 {
   border: 0.0px solid #dbdbdb;
   display: block;
 }
 
-.SingleDatePicker_picker, .SingleDatePicker_picker_1, .SingleDatePicker_picker__directionLeft,
-.SingleDatePicker_picker__directionLeft_2{
+.DateRangePicker_picker, .DateRangePicker_picker_1, .DateRangePicker_picker__directionLeft,
+.DateRangePicker_picker__directionLeft_2{
   filter:invert(100%);
 }
 

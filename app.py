@@ -51,10 +51,14 @@ stations = {}
 station_counts = {}
 station_hour_count = {}
 end_station_hour_count = {}
+dates = []
 
-
-for year in range(2016,2019):
+#for year in range(2016,2019):
+for year in [2018]:
     for i in tqdm(range(1,13)):
+
+        dates.append(int(str(year)+str(i)))
+
         if i < 10:
             file = str(year) + "0" + str(i)
         else:
@@ -81,14 +85,14 @@ app = dash.Dash(__name__)
 date_picker = html.Div(
     className='date-dropdown-div',
     children=[
-        dcc.DatePickerSingle(
+        dcc.DatePickerRange(
             id='date-picker',
             min_date_allowed=dt(2016, 1, 1),
             max_date_allowed=dt(2019, 12, 31),
-            initial_visible_month=dt(2018, 1, 1),
-            date=dt(2018, 1, 1),
-            display_format="MMMM D, YYYY",
-            style={"border": "0px solid black"}
+            initial_visible_month=dt(2017, 8, 5),
+            start_date=dt(2017, 8, 23),
+            end_date=dt(2017, 8, 25),
+            display_format="YYYY-MM-DD"
         )
     ]
 )
@@ -309,14 +313,12 @@ app.layout = html.Div([
 ])
 
 
-
-
-
 ## Update map
 @app.callback(
     Output("map", "figure"),
     [
-        Input("date-picker", "date"),
+        dash.dependencies.Input("date-picker", "start_date"),
+        dash.dependencies.Input("date-picker", "end_date"),
         Input("hour-selector","value"),
         Input("location-picker","value"),
         Input("start-station", "value"),
@@ -324,7 +326,7 @@ app.layout = html.Div([
 
     ],
 )
-def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station):
+def update_graph(start_date, end_date,hourPicked,LocationPicked,start_station,end_station):
 
     zoom = 12.0
 
@@ -343,9 +345,15 @@ def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station)
     bearing = 0
 
     ## Date
-    date_picked = datePicked[0:10]
+    start_date = start_date[0:10]
+    end_date = end_date[0:10]
 
-    station_counts_loc = station_counts[str(date_picked[0:4]) + str(date_picked[5:7])]
+    start_dt_str = str(start_date[0:4]) + str(start_date[5:7])
+    end_dt_str = str(end_date[0:4]) + str(end_date[5:7])
+    date_idxs_in_range = [d for d in dates if (int(start_dt_str) <= int(d) <= int(end_dt_str))]
+
+    station_counts_loc = pd.concat(station_counts[str(d)] for d in date_idxs_in_range)
+
 
     ## Hour
     if hourPicked is None:
@@ -359,7 +367,9 @@ def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station)
 
     selectedhour = [i in hourPicked for i in station_counts_loc.hour]
 
-    pickedData = station_counts_loc.loc[(station_counts_loc.date == date_picked) & (selectedhour)  ,:]
+    pickedData = station_counts_loc.loc[(station_counts_loc.date <= end_date) &
+                                        (station_counts_loc.date >= start_date) &
+                                        (selectedhour)  ,:]
 
     colors = ["blue" if pickedData['station name'].values[i] == start_station else "red" if
     pickedData['station name'].values[i] == end_station else spotify_green for i in range(pickedData.shape[0])]
@@ -433,12 +443,14 @@ def update_predict_time(start_station,end_station,hourPicked):
 
 @app.callback(Output('plot','figure'),
               [
-                  Input("date-picker", "date"),
+                  dash.dependencies.Input("date-picker", "start_date"),
+                  dash.dependencies.Input("date-picker", "end_date"),
                   Input('map','hoverData')
               ])
-def ClickData(datePicked,hoverData):
+def ClickData(start_date, end_date,hoverData):
 
-    date_picked = datePicked[0:10]
+    start_date = start_date[0:10]
+    end_date = end_date[0:10]
 
     start = ' "text": "'
     end = ' bikes'
@@ -448,12 +460,20 @@ def ClickData(datePicked,hoverData):
     except IndexError:
         res = '1 Ave & E 16 St'
 
-    station_hour_count_local = station_hour_count[str(date_picked[0:4]) + str(date_picked[5:7])]
+    start_dt_str = str(start_date[0:4]) + str(start_date[5:7])
+    end_dt_str = str(end_date[0:4]) + str(end_date[5:7])
+    date_idxs_in_range = [d for d in dates if (int(start_dt_str) <= int(d) <= int(end_dt_str))]
+    print(date_idxs_in_range)
+    print(start_date)
+    print(start_dt_str)
+    print(end_date)
+    print(end_dt_str)
 
-    end_station_hour_count_local = end_station_hour_count[str(date_picked[0:4]) + str(date_picked[5:7])]
+    station_hour_count_local = pd.concat(station_hour_count[str(d)] for d in date_idxs_in_range)
 
     to_plot = station_hour_count_local.loc[
-              (station_hour_count_local['station name'] == res) & (station_hour_count_local['date'] == date_picked) ,
+              (station_hour_count_local['station name'] == res) &
+              (station_hour_count_local['date'] <= end_date & (station_hour_count_local['date'] >= start_date)),
               :]
 
     hour = [i for i in range(25)]
@@ -469,9 +489,11 @@ def ClickData(datePicked,hoverData):
     df = pd.DataFrame({'hour': hour,
                        'count': count})
 
+    end_station_hour_count_local = pd.concat(end_station_hour_count[d] for d in date_idxs_in_range)
 
     to_plot2 = end_station_hour_count_local.loc[
-              (end_station_hour_count_local['station name'] == res) & (end_station_hour_count_local['date'] == date_picked) ,
+              (end_station_hour_count_local['station name'] == res) &
+              (end_station_hour_count_local['date'] <= end_date) & (end_station_hour_count_local['date'] >= start_date),
               :]
 
     hour = [i for i in range(25)]
@@ -507,12 +529,15 @@ def ClickData(datePicked,hoverData):
 
     return fig
 
+
+
+
 @app.callback(Output('title-plot','children'),
-              [
-                  Input("date-picker", "date"),
-                  Input('map','hoverData')
-              ])
-def title_plot_update(datePicked,hoverData):
+              [dash.dependencies.Input("date-picker", "start_date"),
+               dash.dependencies.Input("date-picker", "end_date"),
+               Input('map','hoverData')
+               ])
+def title_plot_update(start_date, end_date, hoverData):
     start = ' "text": "'
     end = ' bikes'
     try:
@@ -521,15 +546,17 @@ def title_plot_update(datePicked,hoverData):
     except IndexError:
         res = '1 Ave & E 16 St'
 
-    date_picked = datePicked[0:10]
+    start_date = start_date[0:10]
+    end_date = end_date[0:10]
 
-    return 'Count barplot for: ' + res + " station " + date_picked,
-
+    return 'Count barplot for: ' + res + " station between " + start_date + " and " + end_date
 
 # @app.callback(Output("hour-test","children"),
 #               [Input("hour-selector","value")])
 # def hourtest(hour):
 #     return hour
+
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
