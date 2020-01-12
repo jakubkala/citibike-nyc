@@ -52,7 +52,7 @@ import re
 ################ dist_plot
 import plotly.express as px
 spotify_green = '#1DB954'
-dl = DataLoader("data",
+dl = DataLoader("~/IAD/semestr-1/PADR/citibike-tripdata/data",
                 ["201701-citibike-tripdata.csv"])
 dl.load_data()
 X = dl.data.loc[(dl.data['trip duration'] > 120) &(dl.data['trip duration'] < 7200) &(1 - pd.isnull(dl.data['birth year'])) & (dl.data['birth year'] > 1880),:]
@@ -84,6 +84,16 @@ slider_max  = html.Div([
         marks = {i:str(i) for i in range(0,100,5)},
         vertical = False
     )])
+
+slider = html.Div([
+    dcc.RangeSlider(
+        id='slider',
+        min=0,
+        max=100,
+        step=1,
+        value=[25, 55]
+    )
+])
 
 
 ################################################
@@ -346,16 +356,8 @@ app.layout = html.Div([
             dcc.Tab(label='Insights', children=[
                 dcc.Graph(figure = fig, id = 'weather'),
                 dcc.Graph(id = 'distplot'),
-                html.P("Min Age:"),
-                slider_min,
-                html.P("Max Age:"),
-                slider_max
-
-
-
-
-
-
+                html.P("Age:"),
+                slider
             ]),
         ])
 ])
@@ -580,10 +582,12 @@ def title_plot_update(datePicked,hoverData):
 
 @app.callback(Output('distplot','figure'),
               [
-                  Input('slider-min','value'),
-                  Input('slider-max','value')
+                  Input('slider', 'value')
               ])
-def updateDistPlot(min_age,max_age):
+def updateDistPlot(value):
+
+    min_age, max_age = value
+
     scale = ['#1E1E1E'] + px.colors.sequential.Viridis
     Y = X.loc[(X.age > min_age) & (X.age <= max_age), :]
     if Y.shape[0] > 5000:
