@@ -52,8 +52,8 @@ import re
 ################ dist_plot
 import plotly.express as px
 spotify_green = '#1DB954'
-dl = DataLoader("~/IAD/semestr-1/PADR/citibike-tripdata/data",
-                ["201701-citibike-tripdata.csv"])
+dl = DataLoader("data/",
+                ["201706-citibike-tripdata.csv"])
 dl.load_data()
 X = dl.data.loc[(dl.data['trip duration'] > 120) &(dl.data['trip duration'] < 7200) &(1 - pd.isnull(dl.data['birth year'])) & (dl.data['birth year'] > 1880),:]
 X['start time'] = pd.to_datetime(X['start time'])
@@ -103,6 +103,31 @@ station_counts = {}
 station_hour_count = {}
 end_station_hour_count = {}
 
+for year in range(2013,2020):
+    if year == 2013:
+        for i in tqdm(range(8,13)):
+            if i < 10:
+                file = str(year) + "0" + str(i)
+            else:
+                file = str(year) + str(i)
+            stations[file] = pd.read_csv("data/to_app/stations" + file + ".csv")
+    elif year == 2019:
+        for i in tqdm(range(1,12)):
+            if i < 10:
+                file = str(year) + "0" + str(i)
+            else:
+                file = str(year) + str(i)
+            stations[file] = pd.read_csv("data/to_app/stations" + file + ".csv")
+
+    else:
+        for i in tqdm(range(1,13)):
+            if i < 10:
+                file = str(year) + "0" + str(i)
+            else:
+                file = str(year) + str(i)
+            stations[file] = pd.read_csv("data/to_app/stations" + file + ".csv")
+
+
 
 for year in range(2016,2019):
     for i in tqdm(range(1,13)):
@@ -110,7 +135,7 @@ for year in range(2016,2019):
             file = str(year) + "0" + str(i)
         else:
             file = str(year) + str(i)
-        stations[file] = pd.read_csv("data/to_app/stations" + file + ".csv")
+        # stations[file] = pd.read_csv("data/to_app/stations" + file + ".csv")
         station_counts[file] = pd.read_csv("data/to_app/station_counts" + file + ".csv")
         station_hour_count[file] = pd.read_csv("data/to_app/station_hour_count" + file + ".csv")
         end_station_hour_count[file] = pd.read_csv("data/to_app/end_station_hour_count" + file + ".csv")
@@ -270,7 +295,7 @@ map_div = html.Div(
                           className="text-padding",
                           children=["Lorem Ipsumm"]
                       ),
-                      dcc.Graph(id='plot')
+                      dcc.Graph(id='plot'),
                       ]
         )
     ]
@@ -340,12 +365,90 @@ fig.layout.plot_bgcolor = '#1E1E1E'
 fig.layout.paper_bgcolor = '#1E1E1E'
 
 
+##########################################################################
+latInitial = 40.7272
+lonInitial = -73.991251
 
+data = [go.Scattermapbox(
+    lat=stations['201308'].loc[:, 'station latitude'],
+    lon=stations['201308'].loc[:, 'station longitude'],
+    mode='markers',
+    marker=dict(size=10, color=spotify_green,
+                opacity=0.7)
+)
+]
 
+layout = go.Layout(width=800,
+                   autosize=True,
+                   hovermode='closest',
+                   mapbox=dict(accesstoken=token,
+                               bearing=0,
+                               center=dict(lat=latInitial,
+                                           lon=lonInitial),
+                               pitch=0,
+                               zoom=9,
+                               style='dark'
+                               )
+                   )
+
+frames = [dict(data=[dict(type='scattermapbox',
+                          lat=list(v['station latitude']),
+                          lon=list(v['station longitude']))],
+               traces=[0],
+               name=k
+               ) for k, v in stations.items()]
+
+sliders = [dict(steps=[dict(method='animate',
+                            args=[[k],
+                                  dict(mode='immediate',
+                                       frame=dict(duration=24, redraw=False),
+                                       transition=dict(duration=0)
+                                       )
+                                  ],
+                            label=k[0:4] + "-" + k[4:6]
+                            ) for k, v in stations.items()],
+                transition=dict(duration=0),
+                x=0,  # slider starting position
+                y=0,
+                currentvalue=dict(font=dict(size=12),
+                                  prefix='Point: ',
+                                  visible=True,
+                                  xanchor='center'),
+                len=1.0)
+           ]
+
+layout.update(margin=dict(t=0, b=0, l=0, r=0),
+              updatemenus=[dict(type='buttons', showactive=False,
+                                y=0,
+                                x=1.05,
+                                xanchor='right',
+                                yanchor='top',
+                                pad=dict(t=0, r=10),
+                                buttons=[dict(label='Play',
+                                              method='animate',
+                                              args=[None,
+                                                    dict(frame=dict(duration=100,
+                                                                    redraw=True),
+                                                         transition=dict(duration=0),
+                                                         fromcurrent=True,
+                                                         mode='immediate'
+                                                         )
+                                                    ]
+                                              )
+                                         ]
+                                )
+                           ],
+              sliders=sliders)
+
+animation_station = go.Figure(data=data, layout=layout, frames=frames)
+
+animation_station.layout.plot_bgcolor = '#1E1E1E'
+animation_station.layout.paper_bgcolor = '#1E1E1E'
 
 
 
 # Application layout
+
 app.layout = html.Div([
     dcc.Tabs(
         id='tabs',
@@ -357,12 +460,13 @@ app.layout = html.Div([
                 dcc.Graph(figure = fig, id = 'weather'),
                 dcc.Graph(id = 'distplot'),
                 html.P("Age:"),
-                slider
+                slider,
+                dcc.Graph(figure = animation_station, id = 'animation-station')
             ]),
         ])
 ])
 
-
+##########################################################################
 
 
 
