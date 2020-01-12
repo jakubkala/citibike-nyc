@@ -471,16 +471,29 @@ app.layout = html.Div([
                 map_div
             ]),
             dcc.Tab(label='Insights', children=[
-                dcc.Graph(figure=fig_popularity, id='popularity'),
-                dcc.Graph(figure = fig, id = 'weather'),
-                dcc.Graph(id = 'distplot'),
-                html.P("Age:"),
-                slider,
-                dcc.Graph(figure = animation_station, id = 'animation-station')
+                html.Div(id='insight-tab',
+                         children = [
+                             dcc.Graph(figure=fig_popularity, id='popularity'),
+                            dcc.Graph(figure=fig, id='weather'),
+                            dcc.Graph(id='distplot'),
+                            html.P("Age:"),
+                            slider,
+                            dcc.Graph(figure=animation_station, id='animation-station')
+                         ],
+                         style={"display":"table",
+                                "width":"50%",
+                                "margin":"0 auto"})
+
             ]),
         ])
 ])
-
+#inner {
+#  width: 50%;
+#  margin: 0 auto;
+#}
+#display: table;
+#margin: 0
+#auto;
 ##########################################################################
 
 
