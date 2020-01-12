@@ -53,9 +53,10 @@ import re
 ################ dist_plot
 import plotly.express as px
 spotify_green = '#1DB954'
-dl = DataLoader("~/IAD/semestr-1/PADR/citibike-tripdata/data",
+dl = DataLoader("data",
                 ["201706-citibike-tripdata.csv"])
 dl.load_data()
+
 X = dl.data.loc[(dl.data['trip duration'] > 120) &(dl.data['trip duration'] < 7200) &(1 - pd.isnull(dl.data['birth year'])) & (dl.data['birth year'] > 1880),:]
 X['start time'] = pd.to_datetime(X['start time'])
 X['age'] = 2017 - X['birth year']
@@ -96,6 +97,18 @@ slider = html.Div([
     )
 ])
 
+sector_picker = html.Div(
+    className='sector_picker',
+    children=[
+        dcc.Dropdown(
+            id = 'sector',
+            options = [
+                {'label':sec, 'value':sec}
+                for sec in range(0,10)
+            ]
+        )
+    ]
+)
 
 ################################################
 
@@ -355,7 +368,8 @@ fig.add_trace(go.Scatter(x=count_by_day.loc[:,'day'].values,
 fig.update_layout(height=600, width=800,
                   title_text="weather vs bike rides"
 )
-
+fig.update_xaxes(title_text='Date', color=spotify_green)
+fig.update_yaxes(title_text='Value', color=spotify_green)
 
 fig['layout']['yaxis2'].update(showgrid=False,zeroline=False)
 fig['layout']['yaxis1'].update(showgrid=False,zeroline=False)
@@ -379,6 +393,12 @@ fig_popularity = go.Figure(
                       marker=dict(color=spotify_green))
            ])
 
+fig_popularity.layout.plot_bgcolor = '#1E1E1E'
+fig_popularity.layout.paper_bgcolor = '#1E1E1E'
+fig_popularity['layout']['yaxis'].update(showgrid=False,zeroline=False)
+fig_popularity['layout']['xaxis'].update(showgrid=False,zeroline=False)
+fig_popularity.update_xaxes(title_text='Date', color=spotify_green)
+fig_popularity.update_yaxes(title_text='Count', color=spotify_green)
 ##########################################################################
 latInitial = 40.7272
 lonInitial = -73.991251
@@ -461,6 +481,51 @@ animation_station.layout.paper_bgcolor = '#1E1E1E'
 
 
 
+
+
+
+stacje17 = ['20170' + str(i) if i < 10 else '2017' + str(i) for i in range(1,13)  ]
+stacje17 = pd.concat([stations[i] for i in stacje17]).drop_duplicates()
+clust = joblib.load("scripts/KMeans.pkl")
+stacje17['label'] = clust.predict(stacje17.loc[:,['station latitude','station longitude']])
+to_draw = pd.DataFrame({"lat":stacje17.loc[:,'station latitude'],
+                       "lon":stacje17.loc[:,'station longitude'],
+                       "label":clust.predict(stacje17.loc[:,['station latitude','station longitude']])}
+                      ).drop_duplicates()
+
+fig_sector = go.Figure(go.Scattermapbox(
+        lat = stacje17['station latitude'],
+        lon = stacje17['station longitude'],
+        text = stacje17['label'],
+        mode='markers',
+        marker=go.scattermapbox.Marker(
+            size = 9,
+            color = stacje17['label'],
+            opacity = 0.7)
+    ))
+
+fig_sector.update_layout(
+    margin=dict(t=0, b=0, l=0, r=0),
+    autosize=True,
+    hovermode='closest',
+    mapbox=go.layout.Mapbox(
+        accesstoken= token,
+        bearing=0,
+        center=go.layout.mapbox.Center(
+            lat= stacje17.loc[0,'station latitude'],
+            lon= stacje17.loc[0,'station longitude']
+        ),
+        pitch=0,
+        zoom=11,
+        style="dark"
+    )
+)
+
+fig_sector.layout.plot_bgcolor = '#1E1E1E'
+fig_sector.layout.paper_bgcolor = '#1E1E1E'
+sektor_data = pd.read_csv("data/to_app/sektory.csv")
+
+
 # Application layout
 
 app.layout = html.Div([
@@ -478,7 +543,10 @@ app.layout = html.Div([
                             dcc.Graph(id='distplot'),
                             html.P("Age:"),
                             slider,
-                            dcc.Graph(figure=animation_station, id='animation-station')
+                            dcc.Graph(figure=animation_station, id='animation-station'),
+                            dcc.Graph(figure=fig_sector, id="NY-sector"),
+                            sector_picker,
+                            dcc.Graph(id="rides-from_sector")
                          ],
                          style={"display":"table",
                                 "width":"50%",
@@ -786,6 +854,61 @@ def updateDistPlot(value):
     fig.layout.plot_bgcolor = '#1E1E1E'
     fig.layout.paper_bgcolor = '#1E1E1E'
     return fig
+
+@app.callback(Output('rides-from_sector','figure'),
+              [
+                  Input('sector','value')
+              ])
+def sector_map(sector):
+    if sector is None:
+        sector = 3
+    def to_map(i):
+        df_0 = sektor_data.loc[sektor_data.sektor == i, :]
+        count_0 = df_0.groupby('end station id').size().reset_index().rename(columns={0: 'counts'})
+        df_1 = stacje17.merge(count_0, left_on='station id', right_on='end station id')
+        to_plot = pd.DataFrame({'lat': df_1['station latitude'],
+                                'lon': df_1['station longitude'],
+                                'opacity': df_1.counts / df_1.counts.max(),
+                                'color': df_1.label,
+                                'text': ["sektor: " + str(df_1.label[j]) + " count: " + str(df_1.counts[j])
+                                         for j in range(0, df_1.shape[0])]}).drop_duplicates()
+        return to_plot
+
+    to_plot = to_map(sector)
+
+    fig = go.Figure(go.Scattermapbox(
+            lat = to_plot['lat'],
+            lon = to_plot['lon'],
+            text = to_plot['text'],
+            mode='markers',
+            marker=go.scattermapbox.Marker(
+                size = 9,
+                color = to_plot.color,
+                opacity = to_plot.opacity)
+        ))
+
+    fig.update_layout(
+        margin=dict(t=0, b=0, l=0, r=0),
+        autosize=True,
+        hovermode='closest',
+        mapbox=go.layout.Mapbox(
+            accesstoken= token,
+            bearing=0,
+            center=go.layout.mapbox.Center(
+                lat= to_plot.lat[0],
+                lon= to_plot.lon[0]
+            ),
+            pitch=0,
+            zoom=11,
+            style="dark"
+        )
+    )
+
+    fig.layout.plot_bgcolor = '#1E1E1E'
+    fig.layout.paper_bgcolor = '#1E1E1E'
+
+    return fig
+
 
 
 if __name__ == '__main__':
