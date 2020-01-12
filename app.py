@@ -4,6 +4,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 from dash.dependencies import Input, Output
 from plotly import graph_objs as go
@@ -52,7 +53,7 @@ import re
 ################ dist_plot
 import plotly.express as px
 spotify_green = '#1DB954'
-dl = DataLoader("data/",
+dl = DataLoader("~/IAD/semestr-1/PADR/citibike-tripdata/data",
                 ["201706-citibike-tripdata.csv"])
 dl.load_data()
 X = dl.data.loc[(dl.data['trip duration'] > 120) &(dl.data['trip duration'] < 7200) &(1 - pd.isnull(dl.data['birth year'])) & (dl.data['birth year'] > 1880),:]
@@ -364,6 +365,19 @@ fig['layout']['yaxis3'].update(showgrid=False,zeroline=False)
 fig.layout.plot_bgcolor = '#1E1E1E'
 fig.layout.paper_bgcolor = '#1E1E1E'
 
+citibike_popularity = pd.read_csv("data/basic_stats.csv")
+#citibike_popularity["date"] = datetime.strptime(str(citibike_popularity["miesiac"][:4]) +
+#                                                "-" + str(citibike_popularity["miesiac"][4:]) + "-01",
+#                                               "YYYY-MM-DD")[0:6]
+citibike_popularity['date'] = pd.to_datetime(citibike_popularity['miesiac'], format="%Y%m")
+# colnames
+# miesiac,liczba_jazd,liczba_stacji
+
+fig_popularity = go.Figure(
+    data= [go.Scatter(x=citibike_popularity.loc[:, "date"].values,
+                      y=citibike_popularity.loc[:, "liczba_jazd"].values,
+                      marker=dict(color=spotify_green))
+           ])
 
 ##########################################################################
 latInitial = 40.7272
@@ -457,6 +471,7 @@ app.layout = html.Div([
                 map_div
             ]),
             dcc.Tab(label='Insights', children=[
+                dcc.Graph(figure=fig_popularity, id='popularity'),
                 dcc.Graph(figure = fig, id = 'weather'),
                 dcc.Graph(id = 'distplot'),
                 html.P("Age:"),
