@@ -4,11 +4,9 @@ import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
 import numpy as np
-from datetime import datetime
 
 from dash.dependencies import Input, Output
 from plotly import graph_objs as go
-from plotly.graph_objs import *
 from datetime import datetime as dt
 
 #### Map
@@ -16,53 +14,15 @@ from scripts.dataloader import  DataLoader
 
 ### Model
 from sklearn.externals import joblib
-
 from tqdm import tqdm
+import json
+import plotly.express as px
 
 
 model = joblib.load("scripts/rf.pkl")
 
-### Hover Data
-import json
-import re
-
-#change path
-#"~/IAD/semestr-1/PADR/citibike-tripdata/data"
-# dl = DataLoader("data",
-#                 ["201701-citibike-tripdata.csv"])
-#
-# dl.load_data()
-# stations = dl.load_stations()
-# station_counts = dl.load_station_counts()
-# station_counts = station_counts.merge(stations,how = 'inner', on='station id')
-# station_counts['label'] = station_counts['station name'] + " bikes rental count: " + station_counts['count'].astype('str')
-#
-#
-#
-# station_hour_count = station_counts['count'].groupby([station_counts['station name'],
-#                               station_counts['hour'],station_counts['date']]).sum().reset_index()
-#
-# # end_station_hour_count
-# end_station_counts = dl.load_end_station_counts()
-# end_station_counts = end_station_counts.merge(stations,how = 'inner', on='station id')
-# end_station_hour_count = end_station_counts['count'].groupby([end_station_counts['station name'],
-#                               end_station_counts['hour'],end_station_counts['date']]).sum().reset_index()
-
-
-################################################
-################ dist_plot
-import plotly.express as px
-spotify_green = '#1DB954'
-dl = DataLoader("data",
-                ["201706-citibike-tripdata.csv"])
-dl.load_data()
-
-X = dl.data.loc[(dl.data['trip duration'] > 120) &(dl.data['trip duration'] < 7200) &(1 - pd.isnull(dl.data['birth year'])) & (dl.data['birth year'] > 1880),:]
-X['start time'] = pd.to_datetime(X['start time'])
-X['age'] = 2017 - X['birth year']
-X['hour'] = X['start time'].dt.hour
-
-X = X.loc[:,['trip duration','age','hour']]
+# dist_plot data
+X = pd.read_csv("data/distplot_data.csv")
 
 
 slider_min  = html.Div([
@@ -110,7 +70,7 @@ sector_picker = html.Div(
     ]
 )
 
-################################################
+#####
 
 stations = {}
 station_counts = {}
@@ -149,7 +109,6 @@ for year in range(2016,2019):
             file = str(year) + "0" + str(i)
         else:
             file = str(year) + str(i)
-        # stations[file] = pd.read_csv("data/to_app/stations" + file + ".csv")
         station_counts[file] = pd.read_csv("data/to_app/station_counts" + file + ".csv")
         station_hour_count[file] = pd.read_csv("data/to_app/station_hour_count" + file + ".csv")
         end_station_hour_count[file] = pd.read_csv("data/to_app/end_station_hour_count" + file + ".csv")
@@ -275,27 +234,26 @@ map_div = html.Div(
                     children=[
                         html.H2("citibike-nyc"),
 
-                        html.P("Date Picker"),
+                        html.P("Date"),
                         date_picker,
 
-                        html.P("Certain hour Picker"),
+                        html.P("Time"),
                         hour_picker,
 
-                        html.P('Location Picker'),
+                        html.P('Location'),
                         location_picker,
 
-                        html.P('Start Station Picker'),
+                        html.P('Start Station'),
                         start_station_picker,
 
-                        html.P('End Station Picker'),
+                        html.P('End Station'),
                         end_station_picker,
 
-                        html.P("Ride time Picker"),
+                        html.P("Ride time"),
                         ride_time,
 
                         html.P(id="predict-time"),
                         html.P(id="click-data"),
-                        html.P("Daniel Ponikowski  Jakub Kała 2019"),
                         html.P(id = 'hour-test')
                     ]
                 )
@@ -365,9 +323,7 @@ fig.add_trace(go.Scatter(x=count_by_day.loc[:,'day'].values,
               ,row=1, col=1)
 
 
-fig.update_layout(height=600, width=800,
-                  title_text="weather vs bike rides"
-)
+fig.update_layout(height=600, width=800)
 fig.update_xaxes(title_text='Date', color=spotify_green)
 fig.update_yaxes(title_text='Value', color=spotify_green)
 
@@ -380,15 +336,10 @@ fig.layout.plot_bgcolor = '#1E1E1E'
 fig.layout.paper_bgcolor = '#1E1E1E'
 
 citibike_popularity = pd.read_csv("data/basic_stats.csv")
-#citibike_popularity["date"] = datetime.strptime(str(citibike_popularity["miesiac"][:4]) +
-#                                                "-" + str(citibike_popularity["miesiac"][4:]) + "-01",
-#                                               "YYYY-MM-DD")[0:6]
 citibike_popularity['date'] = pd.to_datetime(citibike_popularity['miesiac'], format="%Y%m")
-# colnames
-# miesiac,liczba_jazd,liczba_stacji
 
 fig_popularity = go.Figure(
-    data= [go.Scatter(x=citibike_popularity.loc[:, "date"].values,
+    data= [go.Scatter(x=citibike_popularity.loc[:, "date"],
                       y=citibike_popularity.loc[:, "liczba_jazd"].values,
                       marker=dict(color=spotify_green))
            ])
@@ -399,6 +350,8 @@ fig_popularity['layout']['yaxis'].update(showgrid=False,zeroline=False)
 fig_popularity['layout']['xaxis'].update(showgrid=False,zeroline=False)
 fig_popularity.update_xaxes(title_text='Date', color=spotify_green)
 fig_popularity.update_yaxes(title_text='Count', color=spotify_green)
+
+
 ##########################################################################
 latInitial = 40.7272
 lonInitial = -73.991251
@@ -538,15 +491,25 @@ app.layout = html.Div([
             dcc.Tab(label='Insights', children=[
                 html.Div(id='insight-tab',
                          children = [
-                             dcc.Graph(figure=fig_popularity, id='popularity'),
+                            html.P("Citibike popularity over time"),
+                            dcc.Graph(figure=fig_popularity, id='popularity'),
+
+                             html.P("Stations"),
+                             dcc.Graph(figure=animation_station, id='animation-station'),
+
+                             html.P("Citibike popularity vs weather"),
                             dcc.Graph(figure=fig, id='weather'),
+
+                            html.P("Age vs time of day"),
                             dcc.Graph(id='distplot'),
                             html.P("Age:"),
                             slider,
-                            dcc.Graph(figure=animation_station, id='animation-station'),
+
+                            html.P("Clustered areas of NYC"),
                             dcc.Graph(figure=fig_sector, id="NY-sector"),
                             sector_picker,
-                            dcc.Graph(id="rides-from_sector")
+                            dcc.Graph(id="rides-from_sector"),
+                            html.P("")
                          ],
                          style={"display":"table",
                                 "width":"50%",
@@ -555,16 +518,6 @@ app.layout = html.Div([
             ]),
         ])
 ])
-#inner {
-#  width: 50%;
-#  margin: 0 auto;
-#}
-#display: table;
-#margin: 0
-#auto;
-##########################################################################
-
-
 
 ## Update map
 @app.callback(
@@ -627,12 +580,7 @@ def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station)
         marker=go.scattermapbox.Marker(
             size=9,
             color=colors,
-            opacity=pickedData['count'] / pickedData['count'].max(),
-            # margin=go.layout.Margin(l=0, r=35, t=0, b=0),
-
-            # colorscale= 'brwnyl',
-            # showscale = True, # jak sie ustali skale to pokazuje skale z boku
-            # reversescale = True # odwraca skale kolorow
+            opacity=pickedData['count'] / pickedData['count'].max()
         )
     ))
 
@@ -682,7 +630,7 @@ def update_predict_time(start_station,end_station,hourPicked):
     if end_station == start_station:
         y_pred = 0
         
-    return "Przedwidywany czas jazdy: " + str(y_pred) + " minut."
+    return "Estimated ride time: " + str(y_pred) + " minutes."
 
 
 @app.callback(Output('plot','figure'),
@@ -744,8 +692,8 @@ def ClickData(datePicked,hoverData):
 
 
     fig = go.Figure(data = [
-        go.Bar(name = 'wypozyczenia', x=df['hour'], y=df['count'],marker_color = spotify_green),
-        go.Bar(name = 'zwroty', x=df2['hour'], y=df2['count'], marker_color='red')]
+        go.Bar(name = 'Rentals', x=df['hour'], y=df['count'],marker_color = spotify_green),
+        go.Bar(name = 'Returns', x=df2['hour'], y=df2['count'], marker_color='red')]
     )
 
     fig.update_layout(
@@ -790,10 +738,7 @@ def updateDistPlot(value):
 
     scale = ['#1E1E1E'] + px.colors.sequential.Viridis
     Y = X.loc[(X.age > min_age) & (X.age <= max_age), :]
-    if Y.shape[0] > 5000:
-        Y = Y.sample(5000)
-    else:
-        Y = Y
+
     x = Y.loc[:, 'age']
     y = Y.loc[:, 'hour']
 
