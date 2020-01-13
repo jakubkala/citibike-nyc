@@ -22,7 +22,7 @@ import plotly.express as px
 model = joblib.load("scripts/rf.pkl")
 
 # dist_plot data
-X = pd.read_csv("data/distplot_data.csv")
+X = pd.read_csv("data/to_app/distplot_data.csv").sample(1000000)
 
 
 slider_min  = html.Div([
@@ -32,7 +32,7 @@ slider_min  = html.Div([
         max=100,
         step=1,
         value=10,
-        marks = {i:str(i) for i in range(0,100,5)}
+        marks = {i:str(i) for i in range(0,100,10)}
     )])
 
 
@@ -53,7 +53,8 @@ slider = html.Div([
         min=0,
         max=100,
         step=1,
-        value=[25, 55]
+        value=[25, 55],
+        marks = {i:str(i) for i in range(0,100,10)}
     )
 ])
 
@@ -738,6 +739,8 @@ def updateDistPlot(value):
 
     scale = ['#1E1E1E'] + px.colors.sequential.Viridis
     Y = X.loc[(X.age > min_age) & (X.age <= max_age), :]
+    if Y.shape[0] > 10000:
+        Y = Y.sample(10000)
 
     x = Y.loc[:, 'age']
     y = Y.loc[:, 'hour']
@@ -764,8 +767,8 @@ def updateDistPlot(value):
     layout = go.Layout(
         showlegend=False,
         autosize=False,
-        width=600,
-        height=550,
+        # width=600,
+        # height=550,
         xaxis=dict(
             domain=[0, 0.85],
             showgrid=False,
@@ -798,6 +801,8 @@ def updateDistPlot(value):
     fig.update_yaxes(title_text='Hour', color=spotify_green)
     fig.layout.plot_bgcolor = '#1E1E1E'
     fig.layout.paper_bgcolor = '#1E1E1E'
+    fig.update_layout(
+        margin=dict(t=0, b=0, l=0, r=0))
     return fig
 
 @app.callback(Output('rides-from_sector','figure'),
@@ -857,4 +862,4 @@ def sector_map(sector):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)
