@@ -495,9 +495,6 @@ app.layout = html.Div([
                             html.P("Citibike popularity over time"),
                             dcc.Graph(figure=fig_popularity, id='popularity'),
 
-                             html.P("Stations"),
-                             dcc.Graph(figure=animation_station, id='animation-station'),
-
                              html.P("Citibike popularity vs weather"),
                             dcc.Graph(figure=fig, id='weather'),
 
@@ -506,7 +503,10 @@ app.layout = html.Div([
                             html.P("Age:"),
                             slider,
 
-                            html.P("Clustered areas of NYC"),
+                             html.P("Stations"),
+                             dcc.Graph(figure=animation_station, id='animation-station'),
+
+                             html.P("Clustered areas of NYC"),
                             dcc.Graph(figure=fig_sector, id="NY-sector"),
                             sector_picker,
                             dcc.Graph(id="rides-from_sector"),
@@ -558,8 +558,6 @@ def update_graph(datePicked,hourPicked,LocationPicked,start_station,end_station)
     ## Hour
     if hourPicked is None:
         hourPicked = [i for i in range(0,24)]
-    # elif isinstance(hourPicked,str):
-    #     hourPicked = [int(i) for i in hourPicked]
     elif len(hourPicked) > 0:
         hourPicked = [int(i) for i in hourPicked]
     else:
@@ -699,7 +697,6 @@ def ClickData(datePicked,hoverData):
 
     fig.update_layout(
         barmode = 'group',
-        # title_text = 'Count barplot for: ' + res + " station " + date_picked,
         margin=dict(t=0, b=2, l=2, r=0),
         xaxis=dict(showgrid=False, zeroline=False,color = spotify_green,title_text = "Hour"),
         yaxis=dict(showgrid=False, zeroline=False,color = spotify_green,title_text = "Count")
